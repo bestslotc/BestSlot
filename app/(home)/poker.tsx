@@ -27,7 +27,7 @@ const groupSlides = <T,>(arr: T[], size: number): T[][] => {
   return grouped;
 };
 
-export default function HotGames() {
+export default function Poker() {
   const originalSlides: SlideType[] = [
     { id: 1, alt: 'slider1', title: 'Game 1' },
     { id: 2, alt: 'slider2', title: 'Game 2' },
@@ -51,7 +51,7 @@ export default function HotGames() {
   return (
     <div className='relative'>
       <Carousel className='group w-full'>
-        <h2 className='mb-4 text-2xl font-bold text-primary'>Hot Games</h2>
+        <h2 className='mb-4 text-2xl font-bold text-primary'>Poker</h2>
 
         <div className='absolute right-12 top-3'>
           <CarouselPrevious variant='default' />
