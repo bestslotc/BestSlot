@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton'; // Assuming you have a Skeleton component
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/lib/auth-client';
 import { getInitials } from '@/lib/utils';
 import { SignOut } from './logout';
@@ -24,8 +24,6 @@ import { SignOut } from './logout';
 export default function UserDropDown() {
   const { data: session, isPending } = useSession();
 
-  // 1. Handle Loading State
-  // If isPending is true, render a Skeleton component or null/div to reserve space.
   if (isPending) {
     return (
       <div className='pl-2'>
@@ -34,22 +32,19 @@ export default function UserDropDown() {
     );
   }
 
-  // 2. Handle Unauthenticated State
-  // If no session exists (session?.user is falsy), show the login button.
   if (!session?.user) {
     return (
-      <div className='pl-2'>
+      <div className='pl-1 md:pl-2'>
         <Link href='/auth/signin'>
           <Button variant='outline'>Sign In</Button>
         </Link>
-        <Link href='/auth/signup' className='ml-4'>
+        <Link href='/auth/signup' className='ml-2 md:ml-4'>
           <Button>Sign Up</Button>
         </Link>
       </div>
     );
   }
 
-  // 3. Handle Authenticated State (User Logged In)
   return (
     <div className='pl-2'>
       <DropdownMenu>

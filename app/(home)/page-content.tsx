@@ -14,7 +14,7 @@ import Sports from './sports';
 
 export default function PageContent() {
   return (
-    <div className='space-y-12 px-2 md:px-10'>
+    <div className='space-y-8 md:space-y-12 px-2 md:px-10'>
       <AnnouncementBanner />
       <HeroSection />
       <Menus />
