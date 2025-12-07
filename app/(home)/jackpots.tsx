@@ -35,7 +35,7 @@ const JackpotMarquee: React.FC = () => {
     const intervalId = setInterval(() => {
       const incrementAmount = Math.floor(Math.random() * 200) + 1;
       setJackpotValue((prevValue) => prevValue + incrementAmount);
-    }, 100); // Speed up the interval for a better visual effect
+    }, 4000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -62,10 +62,6 @@ const JackpotMarquee: React.FC = () => {
 
   return (
     <Card className='p-0 overflow-hidden'>
-      {/* GRID STRUCTURE:
-        - Mobile (default): 1 column
-        - Medium screens (md): 5 columns
-      */}
       <CardContent className='grid grid-cols-1 gap-0 md:grid-cols-5 p-0'>
         {/* --- JACKPOT DISPLAY AREA --- */}
         <div className='relative w-full overflow-hidden md:col-span-2 col-span-1'>
@@ -81,7 +77,7 @@ const JackpotMarquee: React.FC = () => {
 
           <div className='absolute inset-0 p-4 flex flex-col justify-end items-end'>
             {/* JACKPOT TEXT: Smaller on mobile, larger on desktop */}
-            <div className='text-primary text-3xl font-bold mb-4 sm:text-4xl md:text-5xl lg:text-6xl'>
+            <div className='text-primary text-3xl font-bold mb-4 sm:text-4xl'>
               JACKPOT
             </div>
 
@@ -92,7 +88,7 @@ const JackpotMarquee: React.FC = () => {
                 text-2xl font-mono
                 sm:text-3xl 
                 md:text-4xl 
-                lg:text-5xl 
+             
                 mb-2 /* Add margin for spacing on small screens */
               '
             >
@@ -100,8 +96,7 @@ const JackpotMarquee: React.FC = () => {
                 value={jackpotValue}
                 locales='en-US'
                 format={{
-                  style: 'currency', // Switched to currency for better visual
-                  currency: 'USD',
+                  style: 'decimal',
                   minimumFractionDigits: 0,
                 }}
                 // Applying the styled NumberFlow classes (using the previous user's style)
@@ -120,7 +115,7 @@ const JackpotMarquee: React.FC = () => {
         {/* --- MARQUEE GAMES SECTION --- */}
         {/* On mobile, ensure the marquee section has some defined height/look */}
         <div className='flex flex-col md:col-span-3 min-h-[150px] md:min-h-0'>
-          <Marquee gradient={true} speed={25} className='h-full py-4'>
+          <Marquee speed={25} className='h-full py-4'>
             {gameCards.map((card) => (
               <GameCard key={card.id} {...card} />
             ))}

@@ -41,7 +41,10 @@ export default function Live() {
 
         <CarouselContent className='h-60'>
           {slides.map((slide) => (
-            <CarouselItem key={slide.id} className=' basis-1/5'>
+            <CarouselItem
+              key={slide.id}
+              className='basis-3/7 md:basis-1/4 lg:basis-1/5'
+            >
               <Image
                 src={
                   '/placeholder.svg?height=400&width=850&query=carousel slide'

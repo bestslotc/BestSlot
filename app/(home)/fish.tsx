@@ -65,8 +65,7 @@ export default function Fish() {
             <CarouselItem
               // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
               key={index}
-              // basis-1/5 means 5 vertical stacks (10 total games) are visible at once
-              className='basis-1/5 md:basis-1/4 lg:basis-1/5'
+              className='basis-3/7 md:basis-1/4 lg:basis-1/5'
             >
               {/* CSS Grid to stack the two items vertically */}
               <div className='grid h-full grid-rows-2 gap-4'>

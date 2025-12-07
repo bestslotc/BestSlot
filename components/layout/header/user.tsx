@@ -35,10 +35,16 @@ export default function UserDropDown() {
   if (!session?.user) {
     return (
       <div className='pl-1 md:pl-2'>
-        <Link href='/auth/signin'>
+        <Link href='/auth/signin' className='hidden md:inline-block'>
           <Button variant='outline'>Sign In</Button>
         </Link>
-        <Link href='/auth/signup' className='ml-2 md:ml-4'>
+        <Link href='/auth/signin' className='md:hidden'>
+          <Button>Sign In</Button>
+        </Link>
+        <Link
+          href='/auth/signup'
+          className='ml-2 md:ml-4 hidden md:inline-block'
+        >
           <Button>Sign Up</Button>
         </Link>
       </div>

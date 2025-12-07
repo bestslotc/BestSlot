@@ -129,25 +129,27 @@ export default function Footer() {
           </div>
 
           {/* Footer Links */}
-          {footerSections.map((section) => (
-            <div key={section.title}>
-              <h4 className='font-semibold mb-4 text-sm uppercase tracking-wide'>
-                {section.title}
-              </h4>
-              <ul className='space-y-3'>
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className='text-muted-foreground hover:text-foreground transition-colors text-sm'
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:col-span-4'>
+            {footerSections.map((section) => (
+              <div key={section.title}>
+                <h4 className='font-semibold mb-4 text-sm uppercase tracking-wide'>
+                  {section.title}
+                </h4>
+                <ul className='space-y-3'>
+                  {section.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className='text-muted-foreground hover:text-foreground transition-colors text-sm'
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -181,23 +183,23 @@ export default function Footer() {
       {/* Trust Badges & Bottom */}
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-border'>
         <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8'>
-          <div className='flex items-center justify-center gap-2 text-muted-foreground text-sm'>
+          <div className='flex  gap-2 text-muted-foreground text-sm'>
             <Shield size={18} />
             <span>Licensed & Regulated</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-muted-foreground text-sm'>
+          <div className='flex  gap-2 text-muted-foreground text-sm'>
             <Lock size={18} />
             <span>SSL Encrypted</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-muted-foreground text-sm'>
+          <div className='flex   gap-2 text-muted-foreground text-sm'>
             <Shield size={18} />
             <span>Fair Gaming</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-muted-foreground text-sm'>
+          <div className='flex   gap-2 text-muted-foreground text-sm'>
             <Lock size={18} />
             <span>Secure Payment</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-muted-foreground text-sm'>
+          <div className='flex  gap-2 text-muted-foreground text-sm'>
             <Shield size={18} />
             <span>Account Protection</span>
           </div>

@@ -17,23 +17,23 @@ import {
 
 export default function Menus() {
   const menuItems = [
-    { icon: Flame, label: 'HOT GAMES', url: '#' },
+    { icon: Flame, label: 'Hot Games', url: '#' },
 
-    { icon: Heart, label: 'FAVORITES', url: '#' },
+    { icon: Heart, label: 'Favorites', url: '#' },
 
-    { icon: Gamepad2, label: 'SLOTS', url: '#' },
+    { icon: Gamepad2, label: 'Slots', url: '#' },
 
-    { icon: Radio, label: 'LIVE', url: '#' },
+    { icon: Radio, label: 'Live', url: '#' },
 
-    { icon: Zap, label: 'SPORTS', url: '#' },
+    { icon: Zap, label: 'Sports', url: '#' },
 
-    { icon: Dices, label: 'E-SPORTS', url: '#' },
+    { icon: Dices, label: 'E-Sports', url: '#' },
 
-    { icon: Sticker, label: 'POKER', url: '#' },
+    { icon: Sticker, label: 'Poker', url: '#' },
 
-    { icon: Target, label: 'FISH', url: '#' },
+    { icon: Target, label: 'Fish', url: '#' },
 
-    { icon: Target, label: 'LOTTERY', url: '#' },
+    { icon: Target, label: 'Lottery', url: '#' },
   ];
   return (
     <Carousel className='w-full'>
@@ -46,7 +46,7 @@ export default function Menus() {
             <Card className='py-2'>
               <CardContent className='space-y-2 flex items-center p-1 justify-center flex-col'>
                 <item.icon />
-                <p className=' text-xs text-center'>{item.label}</p>
+                <p className='text-xs text-center'>{item.label}</p>
               </CardContent>
             </Card>
           </CarouselItem>
