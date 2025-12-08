@@ -117,16 +117,6 @@ export function LoginForm({
   async function handleSocialLogin(provider: 'google' | 'facebook') {
     // Note: Updated the provider type to include 'facebook'
 
-    if (provider === 'facebook') {
-      // 1. Explicitly handle the 'facebook' case with a clear message
-      toast.info('Feature Not Available', {
-        description:
-          'Facebook sign-in is coming soon! Please use Google or another method for now. 🛠️',
-        duration: 3000,
-      });
-      return; // Stop execution here
-    }
-
     // Since 'facebook' is handled, we only proceed with implemented providers (like 'google')
 
     setIsLoading(true);
@@ -140,10 +130,9 @@ export function LoginForm({
 
     try {
       await signIn.social({
-        provider: provider as 'google', // Cast to the implemented type if necessary
+        provider: provider,
         callbackURL: '/dashboard/profile',
         errorCallbackURL: '/auth/error',
-        // fetchOptions: fetchOptions, // Uncomment if needed
       });
 
       // 2. Add a success toast for initiating the redirect/sign-in process
