@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDistanceToNow } from 'date-fns';
 import {
   AlertTriangle,
   Bell,
@@ -63,33 +64,78 @@ type Notification = {
   data?: Record<string, any>;
 };
 
-// Configuration objects
-const NOTIFICATION_ICONS: Record<NotificationType, React.ReactNode> = {
-  BET_PLACED: <CheckCircle className='h-4 w-4 text-blue-500' />,
-  BET_WON: <TrendingUp className='h-4 w-4 text-green-500' />,
-  BET_LOST: <TrendingDown className='h-4 w-4 text-red-500' />,
-  DEPOSIT_SUCCESS: <DollarSign className='h-4 w-4 text-green-500' />,
-  DEPOSIT_REJECTED: <X className='h-4 w-4 text-red-500' />,
-  WITHDRAWAL_SUCCESS: <DollarSign className='h-4 w-4 text-green-500' />,
-  WITHDRAWAL_REJECTED: <X className='h-4 w-4 text-red-500' />,
-  EVENT_STARTING: <Calendar className='h-4 w-4 text-purple-500' />,
-  ODDS_CHANGED: <TrendingUp className='h-4 w-4 text-orange-500' />,
-  PROMOTION: <Gift className='h-4 w-4 text-pink-500' />,
-  SYSTEM: <Info className='h-4 w-4 text-blue-500' />,
-};
-
-const NOTIFICATION_COLORS: Record<NotificationType, string> = {
-  BET_PLACED: ' border-blue-200',
-  BET_WON: ' border-green-200',
-  BET_LOST: ' border-red-200',
-  DEPOSIT_SUCCESS: ' border-green-200',
-  DEPOSIT_REJECTED: ' border-red-200',
-  WITHDRAWAL_SUCCESS: ' border-green-200',
-  WITHDRAWAL_REJECTED: ' border-red-200',
-  EVENT_STARTING: ' border-purple-200',
-  ODDS_CHANGED: ' border-orange-200',
-  PROMOTION: ' border-pink-200',
-  SYSTEM: ' border-blue-200',
+const NOTIFICATION_CONFIG: Record<
+  NotificationType,
+  {
+    icon: React.ReactNode;
+    color: string;
+    bgColor: string;
+    defaultRoute?: string;
+  }
+> = {
+  BET_PLACED: {
+    icon: <CheckCircle className='h-4 w-4' />,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-50 border-blue-200',
+    defaultRoute: '/bets',
+  },
+  BET_WON: {
+    icon: <TrendingUp className='h-4 w-4' />,
+    color: 'text-green-500',
+    bgColor: 'bg-green-50 border-green-200',
+    defaultRoute: '/bets',
+  },
+  BET_LOST: {
+    icon: <TrendingDown className='h-4 w-4' />,
+    color: 'text-red-500',
+    bgColor: 'bg-red-50 border-red-200',
+    defaultRoute: '/bets',
+  },
+  DEPOSIT_SUCCESS: {
+    icon: <DollarSign className='h-4 w-4' />,
+    color: 'text-green-500',
+    bgColor: 'bg-green-50 border-green-200',
+    defaultRoute: '/wallet/deposits',
+  },
+  DEPOSIT_REJECTED: {
+    icon: <X className='h-4 w-4' />,
+    color: 'text-red-500',
+    bgColor: 'bg-red-50 border-red-200',
+    defaultRoute: '/wallet/deposits',
+  },
+  WITHDRAWAL_SUCCESS: {
+    icon: <DollarSign className='h-4 w-4' />,
+    color: 'text-green-500',
+    bgColor: 'bg-green-50 border-green-200',
+    defaultRoute: '/wallet/withdrawals',
+  },
+  WITHDRAWAL_REJECTED: {
+    icon: <X className='h-4 w-4' />,
+    color: 'text-red-500',
+    bgColor: 'bg-red-50 border-red-200',
+    defaultRoute: '/wallet/withdrawals',
+  },
+  EVENT_STARTING: {
+    icon: <Calendar className='h-4 w-4' />,
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-50 border-purple-200',
+  },
+  ODDS_CHANGED: {
+    icon: <TrendingUp className='h-4 w-4' />,
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-50 border-orange-200',
+  },
+  PROMOTION: {
+    icon: <Gift className='h-4 w-4' />,
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-50 border-pink-200',
+    defaultRoute: '/promotions',
+  },
+  SYSTEM: {
+    icon: <Info className='h-4 w-4' />,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-50 border-blue-200',
+  },
 };
 
 function NotificationsContent() {
@@ -107,38 +153,28 @@ function NotificationsContent() {
   const { mutate: removeNotification } = useRemoveNotificationMutation();
 
   const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
+    if (!notification.isRead) {
+      markAsRead(notification.id);
+    }
 
+    // Navigate based on custom URL or default route
     if (notification.data?.url) {
       router.push(notification.data.url);
-    } else {
-      switch (notification.type) {
-        case 'BET_PLACED':
-        case 'BET_WON':
-        case 'BET_LOST':
-          router.push('/bets');
-          break;
-        case 'DEPOSIT_SUCCESS':
-        case 'DEPOSIT_REJECTED':
-          router.push('/wallet/deposits');
-          break;
-        case 'WITHDRAWAL_SUCCESS':
-        case 'WITHDRAWAL_REJECTED':
-          router.push('/wallet/withdrawals');
-          break;
-        case 'EVENT_STARTING':
-        case 'ODDS_CHANGED':
-          if (notification.data?.eventId) {
-            router.push(`/events/${notification.data.eventId}`);
-          }
-          break;
-        case 'PROMOTION':
-          router.push('/promotions');
-          break;
-        default:
-          break;
-      }
+    } else if (
+      notification.type === 'EVENT_STARTING' &&
+      notification.data?.eventId
+    ) {
+      router.push(`/events/${notification.data.eventId}`);
+    } else if (
+      notification.type === 'ODDS_CHANGED' &&
+      notification.data?.eventId
+    ) {
+      router.push(`/events/${notification.data.eventId}`);
+    } else if (NOTIFICATION_CONFIG[notification.type].defaultRoute) {
+      // biome-ignore lint/style/noNonNullAssertion: this is fine
+      router.push(NOTIFICATION_CONFIG[notification.type].defaultRoute!);
     }
+
     setIsOpen(false);
   };
 
@@ -150,76 +186,70 @@ function NotificationsContent() {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-
-    return date.toLocaleDateString();
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return 'Recently';
+    }
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='hover:bg-primary/10 relative rounded-full transition-all'
-        >
+        <Button variant='outline' size='icon' className='relative'>
           <Bell className='h-5 w-5' />
           {unreadCount > 0 && (
             <Badge
               variant='destructive'
-              className='absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs shadow-sm animate-in zoom-in-50 duration-200'
+              className='absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-[10px] shadow-sm animate-in zoom-in-50 duration-200'
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-          <span className='sr-only'>Notifications</span>
+          <span className='sr-only'>
+            Notifications {unreadCount > 0 && `(${unreadCount} unread)`}
+          </span>
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
-        className='w-96 p-0 shadow-lg border-0 bg-background/95 backdrop-blur-sm'
-        align='end'
+        className='w-80 md:w-96 p-0 shadow-lg border-0 bg-background/95 backdrop-blur-sm'
+        align='center'
         sideOffset={8}
       >
-        <div className='flex items-center justify-between p-4 border-b'>
+        {/* Header */}
+        <div className='flex items-center justify-between p-4 border-b bg-muted/30'>
           <div className='flex items-center gap-2'>
-            <h3 className='font-semibold text-lg'>Notifications</h3>
+            <h3 className='font-semibold text-base'>Notifications</h3>
             {unreadCount > 0 && (
-              <Badge variant='secondary' className='text-xs'>
-                {unreadCount} new
+              <Badge variant='secondary' className='text-xs px-2 py-0.5'>
+                {unreadCount}
               </Badge>
             )}
           </div>
-          <div className='flex items-center gap-0.5'>
+
+          <div className='flex items-center gap-1'>
             <Button
               variant='ghost'
               size='sm'
               onClick={toggleSound}
               className={cn(
-                'h-7 w-7 p-0',
+                'h-8 w-8 p-0 transition-colors',
                 soundEnabled
-                  ? 'text-green-600 hover:bg-green-50'
-                  : 'text-gray-400 hover:bg-gray-50',
+                  ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
               )}
               title={
-                soundEnabled
-                  ? 'Disable notification sounds'
-                  : 'Enable notification sounds'
+                soundEnabled ? 'Mute notifications' : 'Unmute notifications'
               }
             >
               {soundEnabled ? (
-                <Volume2 className='h-3 w-3' />
+                <Volume2 className='h-4 w-4' />
               ) : (
-                <VolumeX className='h-3 w-3' />
+                <VolumeX className='h-4 w-4' />
               )}
             </Button>
+
             {notifications && notifications.length > 0 && (
               <>
                 {unreadCount > 0 && (
@@ -227,130 +257,161 @@ function NotificationsContent() {
                     variant='ghost'
                     size='sm'
                     onClick={() => markAllAsRead()}
-                    className='h-7 w-7 p-0'
+                    className='h-8 w-8 p-0 hover:bg-muted'
                     title='Mark all as read'
                   >
-                    <Check className='h-3 w-3' />
+                    <Check className='h-4 w-4' />
                   </Button>
                 )}
                 <Button
                   variant='ghost'
                   size='sm'
-                  onClick={() => clearAll()}
-                  className='h-7 w-7 p-0 text-red-500 hover:bg-red-50'
-                  title='Clear all notifications'
+                  onClick={() => {
+                    if (confirm('Clear all notifications?')) {
+                      clearAll();
+                    }
+                  }}
+                  className='h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50'
+                  title='Clear all'
                 >
-                  <Trash2 className='h-3 w-3' />
+                  <Trash2 className='h-4 w-4' />
                 </Button>
               </>
             )}
           </div>
         </div>
 
+        {/* Content */}
         <ScrollArea className='h-[500px]'>
           {isPending ? (
-            <div className='flex flex-col items-center justify-center py-12 px-4 text-center'>
-              <div className='rounded-full bg-muted p-3 mb-3'>
-                <Bell className='h-6 w-6 text-muted-foreground animate-pulse' />
+            <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
+              <div className='rounded-full bg-muted p-3 mb-3 animate-pulse'>
+                <Bell className='h-6 w-6 text-muted-foreground' />
               </div>
-              <h4 className='font-medium text-sm mb-1'>Loading...</h4>
-            </div>
-          ) : isError ? (
-            <div className='flex flex-col items-center justify-center py-12 px-4 text-center'>
-              <div className='rounded-full bg-muted p-3 mb-3'>
-                <AlertTriangle className='h-6 w-6 text-red-500' />
-              </div>
-              <h4 className='font-medium text-sm mb-1'>
-                Error loading notifications
-              </h4>
-              <p className='text-xs text-muted-foreground mt-1'>
-                Please try again later
+              <p className='text-sm text-muted-foreground'>
+                Loading notifications...
               </p>
             </div>
-          ) : notifications && notifications.length === 0 ? (
-            <div className='flex flex-col items-center justify-center py-12 px-4 text-center'>
+          ) : isError ? (
+            <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
+              <div className='rounded-full bg-red-50 p-3 mb-3'>
+                <AlertTriangle className='h-6 w-6 text-red-500' />
+              </div>
+              <h4 className='font-medium text-sm mb-1'>Failed to load</h4>
+              <p className='text-xs text-muted-foreground'>
+                Please try refreshing the page
+              </p>
+            </div>
+          ) : !notifications || notifications.length === 0 ? (
+            <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
               <div className='rounded-full bg-muted p-3 mb-3'>
                 <Bell className='h-6 w-6 text-muted-foreground' />
               </div>
               <h4 className='font-medium text-sm mb-1'>No notifications</h4>
               <p className='text-xs text-muted-foreground'>
-                You're all caught up! Check back later for updates.
+                You're all caught up!
               </p>
             </div>
           ) : (
             <div className='divide-y'>
-              {notifications?.map((notification: Notification) => (
-                // biome-ignore lint/a11y/noStaticElementInteractions: this is fine
-                // biome-ignore lint/a11y/useKeyWithClickEvents: this is fine
-                <div
-                  key={notification.id}
-                  className={cn(
-                    'group relative p-4 hover:bg-muted/50 transition-colors cursor-pointer border-l-4',
-                    !notification.isRead && 'bg-primary/5',
-                    !notification.isRead
-                      ? NOTIFICATION_COLORS[notification.type]
-                      : 'border-l-transparent',
-                  )}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className='flex items-start gap-3'>
-                    <div className='shrink-0 mt-0.5'>
-                      <div className='rounded-full bg-background p-2 shadow-sm'>
-                        {NOTIFICATION_ICONS[notification.type]}
-                      </div>
-                    </div>
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2 mb-1'>
-                            <p className='font-semibold text-sm leading-tight'>
-                              {notification.title}
-                            </p>
-                            {!notification.isRead && (
-                              <div className='h-2 w-2 bg-primary rounded-full shrink-0' />
-                            )}
-                          </div>
-                          <p className='text-xs text-muted-foreground leading-relaxed'>
-                            {notification.message}
-                          </p>
-                          <div className='flex items-center gap-2 mt-2'>
-                            <p className='text-xs text-muted-foreground'>
-                              {formatTimeAgo(notification.createdAt)}
-                            </p>
-                            {notification.data?.amount && (
-                              <Badge variant='outline' className='text-xs'>
-                                ৳{notification.data.amount}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeNotification(notification.id);
-                          }}
-                          className='opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600'
+              {notifications.map((notification: Notification) => {
+                const config = NOTIFICATION_CONFIG[notification.type];
+                return (
+                  <button
+                    type='button'
+                    key={notification.id}
+                    className={cn(
+                      'group relative w-full p-4 hover:bg-muted/50 transition-all cursor-pointer border-l-4 text-left',
+                      !notification.isRead
+                        ? `${config.bgColor} border-l-current`
+                        : 'border-l-transparent',
+                    )}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className='flex items-start gap-3'>
+                      {/* Icon */}
+                      <div className='shrink-0 mt-0.5'>
+                        <div
+                          className={cn(
+                            'rounded-full bg-background p-2 shadow-sm border',
+                            config.color,
+                          )}
                         >
-                          <X className='h-3 w-3' />
-                        </Button>
+                          {config.icon}
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-start justify-between gap-2'>
+                          <div className='flex-1 min-w-0'>
+                            {/* Title and unread indicator */}
+                            <div className='flex items-center gap-2 mb-1'>
+                              <h4 className='font-semibold text-sm leading-tight truncate'>
+                                {notification.title}
+                              </h4>
+                              {!notification.isRead && (
+                                <div className='h-2 w-2 bg-primary rounded-full shrink-0 animate-pulse' />
+                              )}
+                            </div>
+
+                            {/* Message */}
+                            <p className='text-xs text-muted-foreground leading-relaxed line-clamp-2'>
+                              {notification.message}
+                            </p>
+
+                            {/* Footer: Time and amount */}
+                            <div className='flex items-center gap-2 mt-2'>
+                              <p className='text-xs text-muted-foreground'>
+                                {formatTimeAgo(notification.createdAt)}
+                              </p>
+                              {notification.data?.amount && (
+                                <>
+                                  <span className='text-xs text-muted-foreground'>
+                                    •
+                                  </span>
+                                  <Badge
+                                    variant='outline'
+                                    className='text-xs font-semibold px-1.5 py-0'
+                                  >
+                                    ৳{notification.data.amount.toLocaleString()}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Delete button */}
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeNotification(notification.id);
+                            }}
+                            className='opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 hover:bg-red-100 hover:text-red-600 shrink-0'
+                            title='Remove notification'
+                          >
+                            <X className='h-3.5 w-3.5' />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
 
+        {/* Footer */}
         {notifications && notifications.length > 0 && (
           <>
             <Separator />
-            <div className='p-3'>
+            <div className='p-2 bg-muted/30'>
               <Button
                 variant='ghost'
-                className='w-full text-sm h-8 text-primary hover:text-primary hover:bg-primary/10'
+                className='w-full text-xs h-8 text-primary hover:text-primary hover:bg-primary/10 font-medium'
                 onClick={() => {
                   router.push('/notifications');
                   setIsOpen(false);
@@ -370,7 +431,7 @@ export default function Notifications() {
   const { data: session, isPending } = useSession();
 
   if (isPending) {
-    return <Skeleton className='h-9 w-9 rounded-full' />;
+    return <Skeleton className='h-9 w-9 rounded-md' />;
   }
 
   if (!session?.user) {

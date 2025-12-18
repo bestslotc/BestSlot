@@ -49,11 +49,11 @@ function BalanceContent() {
       variant='outline'
       size='default'
       onClick={() => refetch()}
-      className='px-2 md:px-4'
+      className='px-1 md:px-4'
     >
       <div className='flex justify-between items-center gap-2'>
         {/* Use the dynamically fetched balance and currency */}
-        <span className='md:text-md font-bold text-primary'>
+        <span className='md:text-md text-xs font-bold text-primary'>
           {currency === 'BDT' ? '৳' : '$'} {balance.toFixed(2)}
         </span>
         <IconRefresh className={isFetching ? 'animate-spin' : ''} />

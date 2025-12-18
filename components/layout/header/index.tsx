@@ -24,9 +24,9 @@ export default async function Header({
 
             {/* Right Section: Search, Theme, Notifications, Cart, User */}
             <div className='flex flex-none items-center justify-end gap-2'>
+              <Balance />
+              <Notifications />
               <div className='hidden items-center gap-2 md:flex'>
-                <Balance />
-                <Notifications />
                 <ModeToggle />
               </div>
               <UserDropDown />

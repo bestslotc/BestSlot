@@ -1,21 +1,16 @@
 'use client';
 
-import type { User } from 'better-auth';
 import {
-  Bell,
   LayoutDashboard,
   MessageSquare,
   Moon,
   Settings,
   Sun,
   UserIcon,
-  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -27,41 +22,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/lib/auth-client';
-import { cn, getInitials } from '@/lib/utils';
-import { useNotifications } from '@/services/common/notifications';
-import { useUserBalance } from '@/services/user/wallet';
+import { getInitials } from '@/lib/utils';
 import { SignOut } from './logout';
-
-function BalanceMenuItem() {
-  const { data: balanceData, isPending } = useUserBalance();
-
-  if (isPending) {
-    return (
-      <div className='flex w-full items-center justify-between'>
-        <div className='flex items-center gap-2'>
-          <Wallet className='h-4 w-4 text-muted-foreground' />
-          <span>Balance</span>
-        </div>
-        <Skeleton className='h-4 w-12' />
-      </div>
-    );
-  }
-
-  const currency = balanceData?.currency === 'BDT' ? '৳' : '$';
-  const balance = balanceData?.balance?.toFixed(2) ?? '0.00';
-
-  return (
-    <div className='flex w-full items-center justify-between'>
-      <div className='flex items-center gap-2'>
-        <Wallet className='h-4 w-4 text-muted-foreground' />
-        <span>Balance</span>
-      </div>
-      <span className='font-semibold'>
-        {currency} {balance}
-      </span>
-    </div>
-  );
-}
+import { ModeToggle } from './theme-toggle';
 
 function ThemeToggleMenuItem() {
   const { theme, setTheme } = useTheme();
@@ -71,7 +34,7 @@ function ThemeToggleMenuItem() {
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
       {theme === 'dark' ? (
-        <Sun className='mr-2 h-4 w-4' />
+        <Sun className='mr-2 h-4 w-4 text-yellow-500' />
       ) : (
         <Moon className='mr-2 h-4 w-4' />
       )}
@@ -79,38 +42,6 @@ function ThemeToggleMenuItem() {
     </DropdownMenuItem>
   );
 }
-
-const LoggedInUserAvatar = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<'div'> & { user: User }
->(({ user, className, ...props }, ref) => {
-  const { data: notifications } = useNotifications();
-  const unreadCount =
-    notifications?.filter((n: { isRead: boolean }) => !n.isRead).length ?? 0;
-
-  return (
-    <div className={cn('relative', className)} ref={ref} {...props}>
-      <Avatar className='border-primary/20 hover:border-primary/40 h-9 w-9 cursor-pointer border-2 transition-all'>
-        <AvatarImage
-          src={user.image ?? undefined}
-          alt={user.name || 'User avatar'}
-        />
-        <AvatarFallback className='bg-primary/10 text-primary'>
-          {getInitials(user.name)}
-        </AvatarFallback>
-      </Avatar>
-      {unreadCount > 0 && (
-        <Badge
-          variant='destructive'
-          className='absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs shadow-sm'
-        >
-          {unreadCount > 9 ? '9+' : unreadCount}
-        </Badge>
-      )}
-    </div>
-  );
-});
-LoggedInUserAvatar.displayName = 'LoggedInUserAvatar';
 
 export default function UserDropDown() {
   const { data: session, isPending } = useSession();
@@ -138,27 +69,12 @@ export default function UserDropDown() {
 
         {/* Mobile dropdown */}
         <div className='md:hidden'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='rounded-full'>
-                <UserIcon className='h-5 w-5' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className='w-48' align='end' forceMount>
-              <DropdownMenuItem asChild>
-                <Link href='/auth/signin' className='w-full'>
-                  Sign In
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href='/auth/signup' className='w-full'>
-                  Sign Up
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <ThemeToggleMenuItem />
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className=' items-center gap-2 flex'>
+            <ModeToggle />
+            <Link href='/auth/signin'>
+              <Button>Sign In</Button>
+            </Link>
+          </div>
         </div>
       </>
     );
@@ -168,7 +84,15 @@ export default function UserDropDown() {
     <div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <LoggedInUserAvatar user={session.user} />
+          <Avatar className='border-primary/20 hover:border-primary/40 h-9 w-9 cursor-pointer border-2 transition-all'>
+            <AvatarImage
+              src={session.user.image ?? undefined}
+              alt={session.user.name || 'User avatar'}
+            />
+            <AvatarFallback className='bg-primary/10 text-primary'>
+              {getInitials(session.user.name)}
+            </AvatarFallback>
+          </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className='w-56'
@@ -190,18 +114,7 @@ export default function UserDropDown() {
           {/* Mobile Only Section */}
           <div className='md:hidden'>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <BalanceMenuItem />
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                href='/notifications'
-                className='flex w-full items-center gap-2'
-              >
-                <Bell className='h-4 w-4' />
-                <span>Notifications</span>
-              </Link>
-            </DropdownMenuItem>
+
             <ThemeToggleMenuItem />
           </div>
 

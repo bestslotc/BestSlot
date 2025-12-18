@@ -40,18 +40,11 @@ export function SignOut() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <div>
-            <AlertDialogAction asChild>
-              <Button
-                variant='destructive'
-                onClick={handleSignOut}
-                className='w-full'
-                type='submit'
-              >
-                Sign Out
-              </Button>
-            </AlertDialogAction>
-          </div>
+          <AlertDialogAction asChild>
+            <Button variant='destructive' onClick={handleSignOut} type='submit'>
+              Sign Out
+            </Button>
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
