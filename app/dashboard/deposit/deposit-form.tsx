@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import {
   AlertCircle,
   ArrowRight,
@@ -35,6 +34,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { depositFormSchema, verifyFormSchema } from '@/lib/schemas/deposit';
 import { cn } from '@/lib/utils';
+import { useDepositMutation } from '@/services/user/deposit/use-deposit-mutation';
 
 export function DepositForm() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,6 +63,15 @@ export function DepositForm() {
     },
   });
 
+  const { isPending, mutate } = useDepositMutation({
+    onSuccess: () => {
+      setStep('deposit');
+      depositForm.reset();
+      verifyForm.reset();
+      setDepositData(null);
+    },
+  });
+
   const handleDepositSubmit = depositForm.handleSubmit(async (data) => {
     setIsProcessing(true);
 
@@ -72,52 +81,23 @@ export function DepositForm() {
       setDepositData(data);
 
       setStep('verify');
-    }, 2000);
+    }, 500);
   });
 
   const handleVerifySubmit = verifyForm.handleSubmit(async (data) => {
-    setIsProcessing(true);
-    try {
-      if (!depositData) {
-        toast.error('Error', {
-          description:
-            'Initial deposit data is missing. Please restart the process.',
-        });
-        setIsProcessing(false);
-        return;
-      }
-      const payload = {
-        ...depositData, // Include original deposit data
-        paymentTransactionId: data.paymentTransactionId,
-        proofImageUrl: data.proofImageUrl,
-      };
-      const response = await axios.post('/api/users/deposit/request', payload); // Changed endpoint
-      if (response.data.success) {
-        toast.success('Deposit request submitted successfully!', {
-          // Changed message
-          description:
-            'Your deposit is being processed and will be credited shortly.',
-        });
-        setStep('deposit');
-        depositForm.reset();
-        verifyForm.reset();
-        setDepositData(null);
-      } else {
-        toast.error('Deposit request failed.', {
-          // Changed message
-          description:
-            response.data.message ||
-            'Something went wrong while submitting your deposit.',
-        });
-      }
-    } catch (_error: unknown) {
-      toast.error('Deposit request failed.', {
-        // Changed message
-        description: 'An unexpected error occurred.',
+    if (!depositData) {
+      toast.error('Error', {
+        description:
+          'Initial deposit data is missing. Please restart the process.',
       });
-    } finally {
-      setIsProcessing(false);
+      return;
     }
+    const payload = {
+      ...depositData, // Include original deposit data
+      paymentTransactionId: data.paymentTransactionId,
+      proofImageUrl: data.proofImageUrl || '',
+    };
+    mutate(payload);
   });
 
   const handleCopyWallet = (walletAddress: string) => {
@@ -268,10 +248,10 @@ export function DepositForm() {
             <div className='space-y-3'>
               <Button
                 type='submit'
-                disabled={isProcessing || !isVerifyFormValid}
+                disabled={isPending || !isVerifyFormValid}
                 className='h-12 w-full bg-primary text-primary-foreground hover:bg-primary/90'
               >
-                {isProcessing ? (
+                {isPending ? (
                   <span className='flex items-center gap-2'>
                     <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent' />
                     Verifying...
@@ -286,7 +266,7 @@ export function DepositForm() {
                 variant='ghost'
                 onClick={() => setStep('deposit')}
                 className='w-full text-muted-foreground hover:text-foreground'
-                disabled={isProcessing}
+                disabled={isPending}
               >
                 Back to Deposit Form
               </Button>

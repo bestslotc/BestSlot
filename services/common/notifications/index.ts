@@ -9,6 +9,8 @@ export function useNotifications() {
       const response = await axios.get(`/api/common/notifications`);
       return response.data;
     },
+    refetchInterval: 120 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 

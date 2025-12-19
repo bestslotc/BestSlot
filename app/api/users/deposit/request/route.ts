@@ -134,24 +134,60 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create notification for user
-      await prisma.notification.create({
-        data: {
-          userId,
-          type: 'SYSTEM',
-          title: 'Deposit Request Submitted',
-          message: `Your deposit request of ${amount} BDT via ${paymentMethod} has been submitted and is pending approval.`,
-          isRead: false,
-          data: {
-            depositRequestId: depositRequest.id,
-            amount: amount,
-            paymentMethod: paymentMethod,
-          },
+      // Get all admin users
+      const adminUsers = await prisma.user.findMany({
+        where: {
+          role: 'ADMIN',
+          isActive: true,
+          banned: false,
+        },
+        select: {
+          id: true,
         },
       });
 
-      // TODO: Send notification to admin (webhook, email, etc.)
-      // await notifyAdminOfNewDeposit(depositRequest);
+      // Create notifications in a transaction
+      await prisma.$transaction([
+        // Create notification for user
+        prisma.notification.create({
+          data: {
+            userId,
+            type: 'SYSTEM',
+            title: 'Deposit Request Submitted',
+            message: `Your deposit request of ${amount} BDT via ${paymentMethod} has been submitted and is pending approval.`,
+            isRead: false,
+            data: {
+              depositRequestId: depositRequest.id,
+              amount: amount,
+              paymentMethod: paymentMethod,
+            },
+          },
+        }),
+        // Create notifications for all admins
+        ...adminUsers.map((admin) =>
+          prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'SYSTEM',
+              title: 'New Deposit Request',
+              message: `${user.name || user.email} has submitted a deposit request of ${amount} BDT via ${paymentMethod}.`,
+              isRead: false,
+              data: {
+                depositRequestId: depositRequest.id,
+                amount: amount,
+                paymentMethod: paymentMethod,
+                senderNumber: senderNumber,
+                paymentTransactionId: paymentTransactionId,
+                requestedBy: {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                },
+              },
+            },
+          }),
+        ),
+      ]);
 
       return NextResponse.json(
         {
