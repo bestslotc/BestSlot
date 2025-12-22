@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useTransform } from 'framer-motion';
 import type { CrashGameData } from '../hooks/use-crash-game';
 
 type CrashDisplayProps = {
@@ -16,6 +16,13 @@ export function CrashDisplay({ gameData }: CrashDisplayProps) {
     cashedOut,
     showWinAnimation,
   } = gameData;
+  const multiplierText = useTransform(multiplier, (v) => `${v.toFixed(2)}x`);
+  const potentialWinningsText = useTransform(multiplier, (v) => {
+    if (playerBet) {
+      return `💎 Potential: $${(playerBet * v).toFixed(2)}`;
+    }
+    return '';
+  });
   return (
     <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4'>
       <AnimatePresence mode='wait'>
@@ -47,7 +54,7 @@ export function CrashDisplay({ gameData }: CrashDisplayProps) {
                   : 'none',
             }}
           >
-            {multiplier.toFixed(2)}x
+            <motion.span>{multiplierText}</motion.span>
           </motion.div>
 
           {gameState === 'crashed' && (
@@ -83,9 +90,9 @@ export function CrashDisplay({ gameData }: CrashDisplayProps) {
               animate={{ y: 0, opacity: 1 }}
               className='mt-4 bg-blue-500/20 backdrop-blur-md rounded-xl px-6 py-3 border-2 border-blue-400/50 shadow-lg shadow-blue-500/20'
             >
-              <p className='text-xl sm:text-2xl font-bold text-blue-400'>
-                💎 Potential: ${(playerBet * multiplier).toFixed(2)}
-              </p>
+              <motion.p className='text-xl sm:text-2xl font-bold text-blue-400'>
+                <motion.span>{potentialWinningsText}</motion.span>
+              </motion.p>
             </motion.div>
           )}
 

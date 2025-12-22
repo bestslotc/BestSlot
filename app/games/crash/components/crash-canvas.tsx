@@ -1,5 +1,6 @@
 'use client';
 
+import type { MotionValue } from 'framer-motion';
 import { useCallback, useEffect, useRef } from 'react';
 import type { GameState } from '../hooks/use-crash-game';
 
@@ -9,62 +10,53 @@ type Particle = {
   vx: number;
   vy: number;
   life: number;
+  color: string;
 };
 
 type CrashCanvasProps = {
   gameState: GameState;
-  multiplierHistory: number[];
-  onCrash: (x: number, y: number) => void;
+  multiplier: MotionValue<number>;
 };
 
-export function CrashCanvas({
-  gameState,
-  multiplierHistory,
-}: CrashCanvasProps) {
+export function CrashCanvas({ gameState, multiplier }: CrashCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cloudOffsetRef = useRef(0);
   const particlesRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number>(0);
+  const rotationRef = useRef(0);
+  const lastPlanePos = useRef({ x: 0, y: 0 });
 
   const createExplosion = useCallback((x: number, y: number) => {
-    for (let i = 0; i < 30; i++) {
-      const angle = (Math.PI * 2 * i) / 30;
-      const speed = 2 + Math.random() * 3;
+    const colors = ['#ff4d4d', '#f97316', '#fbbf24'];
+    for (let i = 0; i < 40; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 4 + 2;
       particlesRef.current.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 2,
+        vy: Math.sin(angle) * speed,
         life: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
       });
     }
   }, []);
 
   useEffect(() => {
-    if (gameState === 'crashed' && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const planeProgress = Math.min(multiplierHistory.length / 100, 1);
-      const planeX = planeProgress * rect.width * 0.85;
-      const lastMultiplier =
-        multiplierHistory[multiplierHistory.length - 1] || 1;
-      const planeY =
-        rect.height -
-        60 -
-        (Math.min(lastMultiplier, 10) / 10) * (rect.height * 0.7);
-      createExplosion(planeX, planeY);
+    if (gameState === 'crashed') {
+      createExplosion(lastPlanePos.current.x, lastPlanePos.current.y);
     }
-  }, [gameState, multiplierHistory, createExplosion]);
+    if (gameState === 'waiting') particlesRef.current = [];
+  }, [gameState, createExplosion]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio, 2);
+      const dpr = window.devicePixelRatio || 1;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
@@ -73,169 +65,87 @@ export function CrashCanvas({
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    const clouds = [
-      { x: 0.1, y: 0.15, size: 70, speed: 0.4 },
-      { x: 0.35, y: 0.2, size: 90, speed: 0.25 },
-      { x: 0.6, y: 0.12, size: 60, speed: 0.35 },
-      { x: 0.85, y: 0.18, size: 75, speed: 0.3 },
-      { x: 0.2, y: 0.55, size: 65, speed: 0.28 },
-    ];
+    const drawRotatingStrips = (width: number, height: number) => {
+      const centerX = 0; // Bottom Left
+      const centerY = height; // Bottom Left
+      const radius = Math.sqrt(width * width + height * height) * 1.2;
 
-    const trees = [
-      { x: 0.1, size: 50 },
-      { x: 0.25, size: 45 },
-      { x: 0.4, size: 55 },
-      { x: 0.58, size: 48 },
-      { x: 0.73, size: 52 },
-      { x: 0.88, size: 46 },
-    ];
+      // Speed control: faster when running, slow crawl when waiting
+      const speed = gameState === 'running' ? 0.0015 : 0.0;
+      rotationRef.current += speed;
 
-    const drawCloud = (x: number, y: number, size: number) => {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
-      ctx.shadowBlur = 15;
-      ctx.beginPath();
-      ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
-      ctx.arc(x + size * 0.4, y, size * 0.45, 0, Math.PI * 2);
-      ctx.arc(x - size * 0.4, y, size * 0.45, 0, Math.PI * 2);
-      ctx.arc(x, y - size * 0.25, size * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    };
+      const numStrips = 36; // Number of dark/light pairs
+      const angleStep = (Math.PI * 2) / (numStrips * 2);
 
-    const drawTree = (x: number, y: number, size: number) => {
-      ctx.fillStyle = '#654321';
-      ctx.fillRect(x - size * 0.1, y - size * 0.35, size * 0.2, size * 0.35);
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(rotationRef.current);
 
-      ctx.fillStyle = '#2d5016';
-      ctx.beginPath();
-      ctx.moveTo(x, y - size * 1.0);
-      ctx.lineTo(x - size * 0.45, y - size * 0.5);
-      ctx.lineTo(x + size * 0.45, y - size * 0.5);
-      ctx.closePath();
-      ctx.fill();
+      for (let i = 0; i < numStrips * 2; i++) {
+        // Toggle between two shades of dark gray/black
+        ctx.fillStyle = i % 2 === 0 ? '#111111' : '#1a1a1a';
 
-      ctx.fillStyle = '#3a6b1e';
-      ctx.beginPath();
-      ctx.moveTo(x, y - size * 0.75);
-      ctx.lineTo(x - size * 0.4, y - size * 0.3);
-      ctx.lineTo(x + size * 0.4, y - size * 0.3);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = '#4a8025';
-      ctx.beginPath();
-      ctx.moveTo(x, y - size * 0.5);
-      ctx.lineTo(x - size * 0.35, y - size * 0.05);
-      ctx.lineTo(x + size * 0.35, y - size * 0.05);
-      ctx.closePath();
-      ctx.fill();
-    };
-
-    const drawParticles = () => {
-      particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
-      particlesRef.current.forEach((particle) => {
-        ctx.fillStyle = `rgba(255, 100, 50, ${particle.life})`;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, i * angleStep, (i + 1) * angleStep);
+        ctx.lineTo(0, 0);
         ctx.fill();
+      }
+      ctx.restore();
 
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.vy += 0.2;
-        particle.life -= 0.02;
-      });
+      // Add a slight gradient overlay to make the bottom-left darker/richer
+      const overlay = ctx.createRadialGradient(0, height, 0, 0, height, radius);
+      overlay.addColorStop(0, 'rgba(0,0,0,0)');
+      overlay.addColorStop(1, 'rgba(0,0,0,0.4)');
+      ctx.fillStyle = overlay;
+      ctx.fillRect(0, 0, width, height);
     };
 
     const animate = () => {
       const rect = canvas.getBoundingClientRect();
-      ctx.clearRect(0, 0, rect.width, rect.height);
+      const { width, height } = rect;
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
-      gradient.addColorStop(0, '#0f172a');
-      gradient.addColorStop(0.5, '#1e293b');
-      gradient.addColorStop(1, '#334155');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, rect.width, rect.height);
+      // Base Background
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, width, height);
 
-      if (gameState === 'running') {
-        cloudOffsetRef.current += 0.6;
-      }
+      // Rotating Strips
+      drawRotatingStrips(width, height);
 
-      clouds.forEach((cloud) => {
-        const x =
-          ((cloud.x * rect.width + cloudOffsetRef.current * cloud.speed) %
-            (rect.width + 200)) -
-          100;
-        const y = cloud.y * rect.height;
-        drawCloud(x, y, cloud.size);
-      });
-
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(0, rect.height - 50, rect.width, 50);
-
-      ctx.fillStyle = '#4ade80';
-      ctx.fillRect(0, rect.height - 55, rect.width, 10);
-
-      trees.forEach((tree) => {
-        const offset =
-          gameState === 'running' ? cloudOffsetRef.current * 0.2 : 0;
-        const x = ((tree.x * rect.width + offset) % (rect.width + 100)) - 50;
-        const y = rect.height - 45;
-        drawTree(x, y, tree.size);
-      });
-
-      if (multiplierHistory.length > 1) {
-        const lineGradient = ctx.createLinearGradient(0, rect.height, 0, 0);
-        lineGradient.addColorStop(0, '#3b82f6');
-        lineGradient.addColorStop(0.5, '#8b5cf6');
-        lineGradient.addColorStop(1, '#ec4899');
-
-        ctx.strokeStyle = lineGradient;
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
-        ctx.shadowBlur = 15;
-
+      // Particles
+      particlesRef.current.forEach((p) => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
         ctx.beginPath();
-        const maxPoints = Math.min(multiplierHistory.length, 100);
-        const startIdx = Math.max(0, multiplierHistory.length - maxPoints);
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.life -= 0.015;
+      });
+      ctx.globalAlpha = 1;
+      particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
 
-        for (let i = startIdx; i < multiplierHistory.length; i++) {
-          const x = ((i - startIdx) / maxPoints) * rect.width * 0.85;
-          const normalizedMultiplier = Math.min(multiplierHistory[i], 10);
-          const y =
-            rect.height -
-            60 -
-            (normalizedMultiplier / 10) * (rect.height * 0.7);
-
-          if (i === startIdx) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
-      if (gameState === 'waiting' && particlesRef.current.length > 0) {
-        particlesRef.current = [];
+      // Update plane position tracker for explosion
+      if (gameState === 'running') {
+        const m = multiplier.get();
+        const xProgress = Math.min((m - 1) / 15, 1);
+        lastPlanePos.current = {
+          x: xProgress * width * 0.85,
+          y: height - xProgress ** 0.6 * height * 0.7 - 60,
+        };
       }
 
-      drawParticles();
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     animate();
-
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [multiplierHistory, gameState]);
+  }, [gameState, multiplier]);
 
   return <canvas ref={canvasRef} className='absolute inset-0 w-full h-full' />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useTransform } from 'framer-motion';
 import { useCallback, useRef } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,11 +36,12 @@ export default function CrashGame() {
   }, []);
   const [gameData, actions] = useCrashGame(1000, createExplosion);
 
-  const { gameState, multiplierHistory, multiplier } = gameData;
+  const { gameState, multiplier, planeProgress } = gameData;
 
-  const planeProgress = Math.min(multiplierHistory.length / 100, 1);
-  const normalizedMult = Math.min(multiplier, 10);
-  const planeY = 70 - (normalizedMult / 10) * 70;
+  const planeY = useTransform(
+    multiplier,
+    (m) => 70 - (Math.min(m, 10) / 10) * 70,
+  );
   const planeRotation = gameState === 'crashed' ? 135 : -20;
 
   return (
@@ -53,11 +54,7 @@ export default function CrashGame() {
         <Card className='overflow-hidden p-0'>
           <CardContent className='p-0'>
             <div className='relative h-80 md:h-96 lg:h-112 overflow-hidden'>
-              <CrashCanvas
-                gameState={gameState}
-                multiplierHistory={multiplierHistory}
-                onCrash={createExplosion}
-              />
+              <CrashCanvas gameState={gameState} multiplier={multiplier} />
               <CrashPlane
                 planeProgress={planeProgress}
                 planeY={planeY}

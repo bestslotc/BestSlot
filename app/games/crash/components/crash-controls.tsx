@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useTransform } from 'framer-motion';
 import { Minus, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,12 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
   } = gameData;
   const { setBetAmount, setAutoCashout, placeBet, startRound, cashOut } =
     actions;
+  const cashOutText = useTransform(multiplier, (v) => {
+    if (playerBet) {
+      return `$${(playerBet * v).toFixed(2)}`;
+    }
+    return '';
+  });
   return (
     <>
       <div className='grid md:grid-cols-2 gap-6 max-w-3xl mx-auto'>
@@ -126,7 +132,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
                 onClick={() => cashOut()}
                 className='w-full h-full text-xl font-black bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-xl shadow-amber-600/40 min-h-[120px] animate-pulse'
               >
-                💰 Cash Out ${(playerBet * multiplier).toFixed(2)}
+                💰 Cash Out <motion.span>{cashOutText}</motion.span>
               </Button>
             </motion.div>
           )}

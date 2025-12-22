@@ -1,5 +1,6 @@
 'use client';
 
+import { type MotionValue, useMotionValue } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateCrashPoint } from '../lib/crash-logic';
 
@@ -10,12 +11,12 @@ export type CrashGameData = {
   betAmount: number;
   autoCashout: number | null;
   gameState: GameState;
-  multiplier: number;
+  multiplier: MotionValue<number>;
   crashPoint: number | null;
   playerBet: number | null;
   cashedOut: boolean;
-  multiplierHistory: number[];
   showWinAnimation: boolean;
+  planeProgress: MotionValue<number>;
 };
 
 export type CrashGameActions = {
@@ -36,11 +37,11 @@ export const useCrashGame = (
   const [betAmount, setBetAmount] = useState(10);
   const [autoCashout, setAutoCashout] = useState<number | null>(null);
   const [gameState, setGameState] = useState<GameState>('waiting');
-  const [multiplier, setMultiplier] = useState(1.0);
+  const multiplier = useMotionValue(1.0);
+  const planeProgress = useMotionValue(0);
   const [crashPoint, setCrashPoint] = useState<number | null>(null);
   const [playerBet, setPlayerBet] = useState<number | null>(null);
   const [cashedOut, setCashedOut] = useState(false);
-  const [multiplierHistory, setMultiplierHistory] = useState<number[]>([]);
   const [showWinAnimation, setShowWinAnimation] = useState(false);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,7 +57,7 @@ export const useCrashGame = (
     (currentMultiplier?: number) => {
       if (!playerBet || cashedOut) return;
 
-      const finalMultiplier = currentMultiplier || multiplier;
+      const finalMultiplier = currentMultiplier || multiplier.get();
       const winnings = playerBet * finalMultiplier;
       setBalance((prev) => prev + winnings);
       setCashedOut(true);
@@ -81,18 +82,20 @@ export const useCrashGame = (
   // biome-ignore lint/correctness/useExhaustiveDependencies: this is fine
   const startRound = useCallback(() => {
     setGameState('running');
-    setMultiplier(1.0);
-    setMultiplierHistory([1.0]);
+    multiplier.set(1.0);
+    planeProgress.set(0);
     const crash = generateCrashPoint();
     setCrashPoint(crash);
     setCashedOut(false);
     autoCashedOutRef.current = false;
 
     let current = 1.0;
+    let ticks = 0;
     intervalRef.current = setInterval(() => {
+      ticks++;
       current += 0.01 + current * 0.005;
-      setMultiplier(current);
-      setMultiplierHistory((prev) => [...prev, current]);
+      multiplier.set(current);
+      planeProgress.set(Math.min(ticks / 100, 1));
 
       if (
         autoCashout &&
@@ -107,20 +110,28 @@ export const useCrashGame = (
 
       if (current >= crash) {
         if (intervalRef.current) clearInterval(intervalRef.current);
-        setMultiplier(crash);
+        multiplier.set(crash);
         setGameState('crashed');
 
         setPlayerBet(null);
 
         setTimeout(() => {
           setGameState('waiting');
-          setMultiplier(1.0);
+          multiplier.set(1.0);
+          planeProgress.set(0);
           setCrashPoint(null);
-          setMultiplierHistory([]);
         }, 3000);
       }
     }, 50);
-  }, [generateCrashPoint, autoCashout, playerBet, cashedOut, cashOut]);
+  }, [
+    generateCrashPoint,
+    autoCashout,
+    playerBet,
+    cashedOut,
+    cashOut,
+    multiplier,
+    planeProgress,
+  ]);
 
   return [
     {
@@ -132,8 +143,8 @@ export const useCrashGame = (
       crashPoint,
       playerBet,
       cashedOut,
-      multiplierHistory,
       showWinAnimation,
+      planeProgress,
     },
     {
       setBetAmount,
