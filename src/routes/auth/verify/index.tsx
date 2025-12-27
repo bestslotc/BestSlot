@@ -1,20 +1,20 @@
-import { SendVerificationEmailForm } from '@/components/auth/send-verification-email-form';
-import { Button } from '@/components/ui/button';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronLeft, Mail, XCircle } from 'lucide-react';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ChevronLeft, Mail, XCircle } from 'lucide-react'
+import { SendVerificationEmailForm } from '@/components/auth/send-verification-email-form'
+import { Button } from '@/components/ui/button'
 
 type SearchResult = {
-  error?: string;
-};
+  error?: string
+}
 
 export const Route = createFileRoute('/auth/verify/')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const { error } = Route.useSearch() as SearchResult;
+  const { error } = Route.useSearch() as SearchResult
 
-  const formattedError = error?.replace(/_/g, ' ').replace(/-/g, ' ');
+  const formattedError = error?.replace(/_/g, ' ').replace(/-/g, ' ')
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-accent/5 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -26,20 +26,16 @@ function RouteComponent() {
             <div className="flex items-center gap-3">
               <Link to="/auth/signin">
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                  size="icon"
+                  variant="ghost"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Verify Email
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Complete your account setup
-                </p>
+                <h1 className="text-2xl font-bold text-foreground">Verify Email</h1>
+                <p className="text-sm text-muted-foreground mt-1">Complete your account setup</p>
               </div>
             </div>
 
@@ -85,8 +81,8 @@ function RouteComponent() {
               <p className="text-sm text-muted-foreground">
                 Already verified?{' '}
                 <Link
-                  to="/auth/signin"
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
+                  to="/auth/signin"
                 >
                   Sign in
                 </Link>
@@ -96,5 +92,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }

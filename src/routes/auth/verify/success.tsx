@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { CheckCircle2, ChevronLeft } from 'lucide-react';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { CheckCircle2, ChevronLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/auth/verify/success')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
   return (
@@ -13,9 +13,9 @@ function RouteComponent() {
         {/* Return Navigation */}
         <Link to="/auth/signin">
           <Button
-            variant="ghost"
-            size="sm"
             className="gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            size="sm"
+            variant="ghost"
           >
             <ChevronLeft className="w-4 h-4" />
             Back To Login
@@ -36,9 +36,7 @@ function RouteComponent() {
 
           {/* Content */}
           <div className="space-y-3">
-            <h1 className="text-4xl font-bold tracking-tight text-balance">
-              Verification sent!
-            </h1>
+            <h1 className="text-4xl font-bold tracking-tight text-balance">Verification sent!</h1>
             <p className="text-lg text-muted-foreground text-balance">
               Success! You have re-sent a verification link to your email.
             </p>
@@ -47,18 +45,13 @@ function RouteComponent() {
           {/* Additional Info */}
           <div className="bg-card border border-border rounded-lg p-4 space-y-2 text-sm">
             <p className="text-muted-foreground">
-              <span className="font-semibold text-foreground">
-                Check your inbox
-              </span>{' '}
-              for the verification email and click the link to complete your
-              verification.
+              <span className="font-semibold text-foreground">Check your inbox</span> for the
+              verification email and click the link to complete your verification.
             </p>
-            <p className="text-muted-foreground">
-              If you don't see it, check your spam folder.
-            </p>
+            <p className="text-muted-foreground">If you don't see it, check your spam folder.</p>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

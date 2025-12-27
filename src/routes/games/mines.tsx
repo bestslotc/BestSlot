@@ -1,161 +1,153 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { Bomb, Gem, TrendingUp, Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { createFileRoute } from '@tanstack/react-router'
+import { Bomb, Gem, TrendingUp, Wallet } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
-type TileState = 'hidden' | 'safe' | 'mine';
+type TileState = 'hidden' | 'safe' | 'mine'
 
 interface Tile {
-  id: number;
-  state: TileState;
-  hasMine: boolean;
+  id: number
+  state: TileState
+  hasMine: boolean
 }
 
 export const Route = createFileRoute('/games/mines')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const [balance, setBalance] = useState(1000);
-  const [betAmount, setBetAmount] = useState(10);
-  const [mineCount, setMineCount] = useState(5);
-  const [tiles, setTiles] = useState<Tile[]>([]);
-  const [gameActive, setGameActive] = useState(false);
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [currentMultiplier, setCurrentMultiplier] = useState(1);
-  const [gameOver, setGameOver] = useState(false);
+  const [balance, setBalance] = useState(1000)
+  const [betAmount, setBetAmount] = useState(10)
+  const [mineCount, setMineCount] = useState(5)
+  const [tiles, setTiles] = useState<Tile[]>([])
+  const [gameActive, setGameActive] = useState(false)
+  const [revealedCount, setRevealedCount] = useState(0)
+  const [currentMultiplier, setCurrentMultiplier] = useState(1)
+  const [gameOver, setGameOver] = useState(false)
 
-  const GRID_SIZE = 25;
+  const GRID_SIZE = 25
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: this is fine
   useEffect(() => {
-    initializeTiles();
-  }, []);
+    initializeTiles()
+  }, [])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: this is fine
   useEffect(() => {
     if (gameActive && revealedCount > 0) {
       // Calculate multiplier based on revealed tiles and mine count
-      const safeTiles = GRID_SIZE - mineCount;
-      const multiplier = calculateMultiplier(
-        revealedCount,
-        safeTiles,
-        mineCount,
-      );
-      setCurrentMultiplier(multiplier);
+      const safeTiles = GRID_SIZE - mineCount
+      const multiplier = calculateMultiplier(revealedCount, safeTiles, mineCount)
+      setCurrentMultiplier(multiplier)
     }
-  }, [revealedCount, gameActive, mineCount]);
+  }, [revealedCount, gameActive, mineCount])
 
-  const calculateMultiplier = (
-    revealed: number,
-    _safeTiles: number,
-    mines: number,
-  ) => {
+  const calculateMultiplier = (revealed: number, _safeTiles: number, mines: number) => {
     // Simple multiplier formula: increases with each revealed tile
-    const baseMultiplier = 1.1;
-    const riskFactor = mines / GRID_SIZE;
-    return (baseMultiplier + riskFactor) ** revealed;
-  };
+    const baseMultiplier = 1.1
+    const riskFactor = mines / GRID_SIZE
+    return (baseMultiplier + riskFactor) ** revealed
+  }
 
   const initializeTiles = () => {
     const newTiles: Tile[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
       id: i,
       state: 'hidden',
       hasMine: false,
-    }));
-    setTiles(newTiles);
-  };
+    }))
+    setTiles(newTiles)
+  }
 
   const placeMines = () => {
     const newTiles: Tile[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
       id: i,
       state: 'hidden',
       hasMine: false,
-    }));
+    }))
 
     // Randomly place mines
-    const minePositions = new Set<number>();
+    const minePositions = new Set<number>()
     while (minePositions.size < mineCount) {
-      const pos = Math.floor(Math.random() * GRID_SIZE);
-      minePositions.add(pos);
+      const pos = Math.floor(Math.random() * GRID_SIZE)
+      minePositions.add(pos)
     }
 
     minePositions.forEach((pos) => {
-      newTiles[pos].hasMine = true;
-    });
+      newTiles[pos].hasMine = true
+    })
 
-    setTiles(newTiles);
-  };
+    setTiles(newTiles)
+  }
 
   const startGame = () => {
     if (betAmount < 1 || betAmount > balance) {
-      return;
+      return
     }
 
-    setBalance((prev) => prev - betAmount);
-    placeMines();
-    setGameActive(true);
-    setGameOver(false);
-    setRevealedCount(0);
-    setCurrentMultiplier(1);
-  };
+    setBalance((prev) => prev - betAmount)
+    placeMines()
+    setGameActive(true)
+    setGameOver(false)
+    setRevealedCount(0)
+    setCurrentMultiplier(1)
+  }
 
   const handleTileClick = (tileId: number) => {
-    if (!gameActive || gameOver) return;
+    if (!gameActive || gameOver) return
 
-    const tile = tiles[tileId];
-    if (tile.state !== 'hidden') return;
+    const tile = tiles[tileId]
+    if (tile.state !== 'hidden') return
 
-    const newTiles = [...tiles];
+    const newTiles = [...tiles]
 
     if (tile.hasMine) {
       // Game over - hit a mine
-      newTiles[tileId].state = 'mine';
+      newTiles[tileId].state = 'mine'
       // Reveal all mines
       newTiles.forEach((t) => {
-        if (t.hasMine) t.state = 'mine';
-      });
-      setTiles(newTiles);
-      setGameActive(false);
-      setGameOver(true);
+        if (t.hasMine) t.state = 'mine'
+      })
+      setTiles(newTiles)
+      setGameActive(false)
+      setGameOver(true)
     } else {
       // Safe tile
-      newTiles[tileId].state = 'safe';
-      setTiles(newTiles);
-      setRevealedCount((prev) => prev + 1);
+      newTiles[tileId].state = 'safe'
+      setTiles(newTiles)
+      setRevealedCount((prev) => prev + 1)
     }
-  };
+  }
 
   const cashOut = () => {
-    if (!gameActive || revealedCount === 0) return;
+    if (!gameActive || revealedCount === 0) return
 
-    const winnings = betAmount * currentMultiplier;
-    setBalance((prev) => prev + winnings);
-    setGameActive(false);
+    const winnings = betAmount * currentMultiplier
+    setBalance((prev) => prev + winnings)
+    setGameActive(false)
 
     // Reveal all tiles
     const newTiles = tiles.map((tile) => ({
       ...tile,
       state: tile.hasMine ? 'mine' : 'safe',
-    }));
-    setTiles(newTiles as Tile[]);
-  };
+    }))
+    setTiles(newTiles as Tile[])
+  }
 
   const resetGame = () => {
-    initializeTiles();
-    setGameActive(false);
-    setGameOver(false);
-    setRevealedCount(0);
-    setCurrentMultiplier(1);
-  };
+    initializeTiles()
+    setGameActive(false)
+    setGameOver(false)
+    setRevealedCount(0)
+    setCurrentMultiplier(1)
+  }
 
   const quickBet = (amount: number) => {
-    setBetAmount(amount);
-  };
+    setBetAmount(amount)
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -165,10 +157,6 @@ function RouteComponent() {
           <div className="grid grid-cols-5 gap-2">
             {tiles.map((tile) => (
               <button
-                type="button"
-                key={tile.id}
-                onClick={() => handleTileClick(tile.id)}
-                disabled={!gameActive || tile.state !== 'hidden'}
                 className={cn(
                   'group relative aspect-square rounded-lg border-2 transition-all duration-200',
                   tile.state === 'hidden' && gameActive
@@ -182,8 +170,12 @@ function RouteComponent() {
                     : '',
                   tile.state === 'mine'
                     ? 'border-destructive bg-destructive/20 shadow-lg shadow-destructive/30'
-                    : '',
+                    : ''
                 )}
+                disabled={!gameActive || tile.state !== 'hidden'}
+                key={tile.id}
+                onClick={() => handleTileClick(tile.id)}
+                type="button"
               >
                 {tile.state === 'safe' && (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -208,9 +200,7 @@ function RouteComponent() {
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <span className="text-sm font-medium text-foreground">
                   Current Multiplier:{' '}
-                  <span className="text-primary">
-                    {currentMultiplier.toFixed(2)}x
-                  </span>
+                  <span className="text-primary">{currentMultiplier.toFixed(2)}x</span>
                 </span>
               </div>
               <span className="text-sm text-muted-foreground">
@@ -223,9 +213,7 @@ function RouteComponent() {
         {gameOver && (
           <Card className="border-destructive/50 bg-destructive/10 p-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-destructive">
-                Game Over!
-              </p>
+              <p className="text-lg font-semibold text-destructive">Game Over!</p>
               <p className="text-sm text-muted-foreground">
                 You hit a mine. Better luck next time!
               </p>
@@ -240,40 +228,35 @@ function RouteComponent() {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Balance
-              </span>
+              <span className="text-sm font-medium text-muted-foreground">Balance</span>
             </div>
-            <span className="text-2xl font-bold text-primary">
-              ${balance.toFixed(2)}
-            </span>
+            <span className="text-2xl font-bold text-primary">${balance.toFixed(2)}</span>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="bet-amount" className="text-foreground">
+              <Label className="text-foreground" htmlFor="bet-amount">
                 Bet Amount
               </Label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
               <Input
+                className="bg-background"
+                disabled={gameActive}
                 id="bet-amount"
+                max={balance}
+                min={1}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
                 type="number"
                 value={betAmount}
-                onChange={(e) => setBetAmount(Number(e.target.value))}
-                disabled={gameActive}
-                min={1}
-                max={balance}
-                className="bg-background"
               />
               <div className="grid grid-cols-4 gap-2">
                 {[10, 25, 50, 100].map((amount) => (
                   <Button
-                    key={amount}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => quickBet(amount)}
-                    disabled={gameActive}
                     className="border-border/50"
+                    disabled={gameActive}
+                    key={amount}
+                    onClick={() => quickBet(amount)}
+                    size="sm"
+                    variant="outline"
                   >
                     ${amount}
                   </Button>
@@ -282,56 +265,49 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mine-count" className="text-foreground">
+              <Label className="text-foreground" htmlFor="mine-count">
                 Number of Mines
               </Label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
               <Input
+                className="bg-background"
+                disabled={gameActive}
                 id="mine-count"
+                max={20}
+                min={1}
+                onChange={(e) => setMineCount(Math.min(20, Math.max(1, Number(e.target.value))))}
                 type="number"
                 value={mineCount}
-                onChange={(e) =>
-                  setMineCount(
-                    Math.min(20, Math.max(1, Number(e.target.value))),
-                  )
-                }
-                disabled={gameActive}
-                min={1}
-                max={20}
-                className="bg-background"
               />
-              <p className="text-xs text-muted-foreground">
-                More mines = higher risk and rewards
-              </p>
+              <p className="text-xs text-muted-foreground">More mines = higher risk and rewards</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-2">
             {!gameActive ? (
               <Button
-                onClick={startGame}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                size="lg"
                 disabled={betAmount < 1 || betAmount > balance}
+                onClick={startGame}
+                size="lg"
               >
                 Start Game
               </Button>
             ) : (
               <Button
-                onClick={cashOut}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                size="lg"
                 disabled={revealedCount === 0}
+                onClick={cashOut}
+                size="lg"
               >
                 Cash Out ${(betAmount * currentMultiplier).toFixed(2)}
               </Button>
             )}
             {!gameActive && tiles.some((t) => t.state !== 'hidden') && (
               <Button
-                onClick={resetGame}
-                variant="outline"
                 className="w-full bg-transparent"
+                onClick={resetGame}
                 size="lg"
+                variant="outline"
               >
                 New Game
               </Button>
@@ -367,5 +343,5 @@ function RouteComponent() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

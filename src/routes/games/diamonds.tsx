@@ -1,38 +1,37 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+import { Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
-import { Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-
-type GemType = 'diamond' | 'ruby' | 'emerald' | 'sapphire' | 'coal';
+type GemType = 'diamond' | 'ruby' | 'emerald' | 'sapphire' | 'coal'
 
 interface GameGem {
-  type: GemType;
-  multiplier: number;
-  revealed: boolean;
+  type: GemType
+  multiplier: number
+  revealed: boolean
 }
 
 export const Route = createFileRoute('/games/diamonds')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const [balance, setBalance] = useState(1000);
-  const [betAmount, setBetAmount] = useState(10);
-  const [gameActive, setGameActive] = useState(false);
-  const [gems, setGems] = useState<GameGem[]>([]);
-  const [revealed, setRevealed] = useState(0);
-  const [totalWinnings, setTotalWinnings] = useState(0);
+  const [balance, setBalance] = useState(1000)
+  const [betAmount, setBetAmount] = useState(10)
+  const [gameActive, setGameActive] = useState(false)
+  const [gems, setGems] = useState<GameGem[]>([])
+  const [revealed, setRevealed] = useState(0)
+  const [totalWinnings, setTotalWinnings] = useState(0)
 
   const gemTypes: {
-    type: GemType;
-    multiplier: number;
-    probability: number;
-    color: string;
+    type: GemType
+    multiplier: number
+    probability: number
+    color: string
   }[] = [
     {
       type: 'diamond',
@@ -54,31 +53,31 @@ function RouteComponent() {
       color: 'text-cyan-500',
     },
     { type: 'coal', multiplier: 0, probability: 0.05, color: 'text-gray-600' },
-  ];
+  ]
 
   const startGame = () => {
-    if (betAmount < 1 || betAmount > balance) return;
+    if (betAmount < 1 || betAmount > balance) return
 
-    setBalance((prev) => prev - betAmount);
-    setGameActive(true);
-    setRevealed(0);
-    setTotalWinnings(0);
-    generateGems();
-  };
+    setBalance((prev) => prev - betAmount)
+    setGameActive(true)
+    setRevealed(0)
+    setTotalWinnings(0)
+    generateGems()
+  }
 
   const generateGems = () => {
-    const newGems: GameGem[] = [];
+    const newGems: GameGem[] = []
 
     for (let i = 0; i < 25; i++) {
-      const random = Math.random();
-      let cumulative = 0;
-      let selectedGem = gemTypes[0];
+      const random = Math.random()
+      let cumulative = 0
+      let selectedGem = gemTypes[0]
 
       for (const gemType of gemTypes) {
-        cumulative += gemType.probability;
+        cumulative += gemType.probability
         if (random <= cumulative) {
-          selectedGem = gemType;
-          break;
+          selectedGem = gemType
+          break
         }
       }
 
@@ -86,45 +85,45 @@ function RouteComponent() {
         type: selectedGem.type,
         multiplier: selectedGem.multiplier,
         revealed: false,
-      });
+      })
     }
 
-    setGems(newGems);
-  };
+    setGems(newGems)
+  }
 
   const revealGem = (index: number) => {
-    if (!gameActive || gems[index].revealed) return;
+    if (!gameActive || gems[index].revealed) return
 
-    const newGems = [...gems];
-    newGems[index].revealed = true;
-    setGems(newGems);
+    const newGems = [...gems]
+    newGems[index].revealed = true
+    setGems(newGems)
 
-    const gem = gems[index];
+    const gem = gems[index]
 
     if (gem.type === 'coal') {
       // Game over
-      setGameActive(false);
+      setGameActive(false)
       // Reveal all gems
-      setGems(newGems.map((g) => ({ ...g, revealed: true })));
+      setGems(newGems.map((g) => ({ ...g, revealed: true })))
     } else {
-      const winAmount = betAmount * gem.multiplier;
-      setTotalWinnings((prev) => prev + winAmount);
-      setRevealed((prev) => prev + 1);
+      const winAmount = betAmount * gem.multiplier
+      setTotalWinnings((prev) => prev + winAmount)
+      setRevealed((prev) => prev + 1)
     }
-  };
+  }
 
   const cashOut = () => {
-    if (!gameActive) return;
+    if (!gameActive) return
 
-    setBalance((prev) => prev + totalWinnings);
-    setGameActive(false);
+    setBalance((prev) => prev + totalWinnings)
+    setGameActive(false)
     // Reveal all gems
-    setGems(gems.map((g) => ({ ...g, revealed: true })));
-  };
+    setGems(gems.map((g) => ({ ...g, revealed: true })))
+  }
 
   const getGemColor = (type: GemType): string => {
-    return gemTypes.find((g) => g.type === type)?.color || 'text-primary';
-  };
+    return gemTypes.find((g) => g.type === type)?.color || 'text-primary'
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -132,13 +131,9 @@ function RouteComponent() {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">
-              Balance
-            </span>
+            <span className="text-sm font-medium text-muted-foreground">Balance</span>
           </div>
-          <span className="text-2xl font-bold text-primary">
-            ${balance.toFixed(2)}
-          </span>
+          <span className="text-2xl font-bold text-primary">${balance.toFixed(2)}</span>
         </div>
 
         {/* Game Stats */}
@@ -150,9 +145,7 @@ function RouteComponent() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Current Win</p>
-              <p className="text-2xl font-bold text-primary">
-                ${totalWinnings.toFixed(2)}
-              </p>
+              <p className="text-2xl font-bold text-primary">${totalWinnings.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Profit</p>
@@ -168,33 +161,25 @@ function RouteComponent() {
           <div className="grid grid-cols-5 gap-2">
             {gems.map((gem, index) => (
               <button
-                type="button"
-                // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-                key={index}
-                onClick={() => revealGem(index)}
-                disabled={!gameActive || gem.revealed}
                 className={cn(
                   'aspect-square rounded-lg border-2 transition-all',
                   !gem.revealed && gameActive
                     ? 'border-border/50 bg-accent/50 hover:border-primary hover:bg-accent hover:scale-105 cursor-pointer'
                     : '',
-                  !gem.revealed && !gameActive
-                    ? 'border-border/30 bg-accent/30'
-                    : '',
-                  gem.revealed &&
-                    gem.type !== 'coal' &&
-                    'border-primary bg-primary/20',
-                  gem.revealed &&
-                    gem.type === 'coal' &&
-                    'border-destructive bg-destructive/20',
+                  !gem.revealed && !gameActive ? 'border-border/30 bg-accent/30' : '',
+                  gem.revealed && gem.type !== 'coal' && 'border-primary bg-primary/20',
+                  gem.revealed && gem.type === 'coal' && 'border-destructive bg-destructive/20'
                 )}
+                disabled={!gameActive || gem.revealed}
+                // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
+                key={index}
+                onClick={() => revealGem(index)}
+                type="button"
               >
                 {gem.revealed && (
                   <div className="flex flex-col items-center justify-center gap-1">
                     <Wallet className={cn('h-6 w-6', getGemColor(gem.type))} />
-                    <span
-                      className={cn('text-xs font-bold', getGemColor(gem.type))}
-                    >
+                    <span className={cn('text-xs font-bold', getGemColor(gem.type))}>
                       {gem.type === 'coal' ? '💣' : `${gem.multiplier}x`}
                     </span>
                   </div>
@@ -208,9 +193,7 @@ function RouteComponent() {
         {!gameActive && gems.some((g) => g.revealed && g.type === 'coal') && (
           <Card className="mb-6 border-destructive/50 bg-destructive/10 p-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-destructive">
-                Hit Coal!
-              </p>
+              <p className="text-lg font-semibold text-destructive">Hit Coal!</p>
               <p className="text-sm text-muted-foreground">
                 You revealed {revealed} gems and won ${totalWinnings.toFixed(2)}
               </p>
@@ -223,23 +206,22 @@ function RouteComponent() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="bet-amount">Bet Amount</Label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
               <Input
+                className="bg-background"
                 id="bet-amount"
+                max={balance}
+                min={1}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
                 type="number"
                 value={betAmount}
-                onChange={(e) => setBetAmount(Number(e.target.value))}
-                min={1}
-                max={balance}
-                className="bg-background"
               />
               <div className="grid grid-cols-4 gap-2">
                 {[10, 25, 50, 100].map((amount) => (
                   <Button
                     key={amount}
-                    variant="outline"
-                    size="sm"
                     onClick={() => setBetAmount(amount)}
+                    size="sm"
+                    variant="outline"
                   >
                     ${amount}
                   </Button>
@@ -248,9 +230,9 @@ function RouteComponent() {
             </div>
 
             <Button
-              onClick={startGame}
-              disabled={betAmount < 1 || betAmount > balance}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={betAmount < 1 || betAmount > balance}
+              onClick={startGame}
               size="lg"
             >
               Start Game
@@ -259,12 +241,7 @@ function RouteComponent() {
         )}
 
         {gameActive && (
-          <Button
-            onClick={cashOut}
-            variant="outline"
-            className="w-full bg-transparent"
-            size="lg"
-          >
+          <Button className="w-full bg-transparent" onClick={cashOut} size="lg" variant="outline">
             Cash Out ${totalWinnings.toFixed(2)}
           </Button>
         )}
@@ -276,16 +253,12 @@ function RouteComponent() {
           {gemTypes
             .filter((g) => g.type !== 'coal')
             .map((gem) => (
-              <div key={gem.type} className="flex items-center justify-between">
+              <div className="flex items-center justify-between" key={gem.type}>
                 <div className="flex items-center gap-2">
                   <Wallet className={cn('h-4 w-4', gem.color)} />
-                  <span className="capitalize text-muted-foreground">
-                    {gem.type}
-                  </span>
+                  <span className="capitalize text-muted-foreground">{gem.type}</span>
                 </div>
-                <span className="font-semibold text-primary">
-                  {gem.multiplier}x
-                </span>
+                <span className="font-semibold text-primary">{gem.multiplier}x</span>
               </div>
             ))}
           <div className="flex items-center justify-between border-t border-border/50 pt-2">
@@ -317,5 +290,5 @@ function RouteComponent() {
         </ul>
       </Card>
     </div>
-  );
+  )
 }

@@ -1,34 +1,35 @@
 // src/actions/sendEmail.server.ts
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import transporter from '@/lib/nodemailer';
+
+import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
+import transporter from '@/lib/nodemailer'
 
 // Define the input schema (Zod works directly here)
 const sendEmailSchema = z.object({
-	to: z.string().email(),
-	subject: z.string().min(1),
-	meta: z.object({
-		description: z.string().min(1),
-		link: z.string().url(),
-		callToActionText: z.string().optional(),
-		greeting: z.string().optional(),
-	}),
-});
+  to: z.string().email(),
+  subject: z.string().min(1),
+  meta: z.object({
+    description: z.string().min(1),
+    link: z.string().url(),
+    callToActionText: z.string().optional(),
+    greeting: z.string().optional(),
+  }),
+})
 
 export const sendEmailAction = createServerFn({ method: 'POST' })
-	// <-- This is the correct method name
-	.inputValidator(sendEmailSchema)
-	.handler(async ({ data }) => {
-		// `data` is now fully typed and validated (Zod-safe)
-		const { to, subject, meta } = data;
+  // <-- This is the correct method name
+  .inputValidator(sendEmailSchema)
+  .handler(async ({ data }) => {
+    // `data` is now fully typed and validated (Zod-safe)
+    const { to, subject, meta } = data
 
-		console.log('[sendEmailAction] called with:', { to, subject });
+    console.log('[sendEmailAction] called with:', { to, subject })
 
-		const mailOptions = {
-			from: process.env.NODEMAILER_USER,
-			to,
-			subject: `BestSlot - ${subject}`,
-			html: `
+    const mailOptions = {
+      from: process.env.NODEMAILER_USER,
+      to,
+      subject: `BestSlot - ${subject}`,
+      html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,15 +87,15 @@ export const sendEmailAction = createServerFn({ method: 'POST' })
 </body>
 </html>
       `,
-		};
+    }
 
-		try {
-			console.log('[sendEmailAction] sending...');
-			await transporter.sendMail(mailOptions);
-			console.log('[sendEmailAction] sent successfully');
-			return { success: true };
-		} catch (err: any) {
-			console.error('[sendEmailAction] error:', err);
-			return { success: false, error: err.message };
-		}
-	});
+    try {
+      console.log('[sendEmailAction] sending...')
+      await transporter.sendMail(mailOptions)
+      console.log('[sendEmailAction] sent successfully')
+      return { success: true }
+    } catch (err) {
+      console.error('[sendEmailAction] error:', err)
+      return { success: false, error: 'Failed to send email' }
+    }
+  })

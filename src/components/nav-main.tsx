@@ -1,21 +1,21 @@
+import type { Icon } from '@tabler/icons-react'
+import { Link } from '@tanstack/react-router'
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import type { Icon } from '@tabler/icons-react';
-import { Link } from '@tanstack/react-router';
+} from '@/components/ui/sidebar'
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string;
-    url: string;
-    icon?: Icon;
-  }[];
+    title: string
+    url: string
+    icon?: Icon
+  }[]
 }) {
   return (
     <SidebarGroup>
@@ -45,5 +45,5 @@ export function NavMain({
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  );
+  )
 }

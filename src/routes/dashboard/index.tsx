@@ -1,33 +1,33 @@
-import { ChartAreaInteractive } from '@/components/chart-area-interactive';
-import { SectionCards } from '@/components/section-cards';
-import { getUser } from '@/lib/auth-server-fn';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { ChartAreaInteractive } from '@/components/chart-area-interactive'
+import { SectionCards } from '@/components/section-cards'
+import { getUser } from '@/lib/auth-server-fn'
 
 export const Route = createFileRoute('/dashboard/')({
   component: RouteComponent,
   beforeLoad: async () => {
-    const user = await getUser();
-    return { user };
+    const user = await getUser()
+    return { user }
   },
   loader: async ({ context }) => {
     if (!context.user) {
-      throw redirect({ to: '/auth/signin' });
+      throw redirect({ to: '/auth/signin' })
     }
     return {
       user: context.user,
-    };
+    }
   },
-});
+})
 
 function RouteComponent() {
-  const user = Route.useLoaderData().user;
+  const user = Route.useLoaderData().user
 
   if (user.role === 'ADMIN') {
     return (
       <div className="px-4 md:px-6 py-4">
         <h1>Admin Dashboard</h1>
       </div>
-    );
+    )
   }
 
   return (
@@ -41,5 +41,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }

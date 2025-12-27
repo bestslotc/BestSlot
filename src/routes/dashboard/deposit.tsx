@@ -1,9 +1,9 @@
-import { DepositForm } from '@/components/dashboard/deposit-form';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+import { DepositForm } from '@/components/dashboard/deposit-form'
 
 export const Route = createFileRoute('/dashboard/deposit')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
   return (
@@ -15,5 +15,5 @@ function RouteComponent() {
         </div>
       </main>
     </div>
-  );
+  )
 }

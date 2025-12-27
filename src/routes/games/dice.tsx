@@ -1,52 +1,52 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { Dices, Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { createFileRoute } from '@tanstack/react-router'
+import { Dices, Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export const Route = createFileRoute('/games/dice')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const [balance, setBalance] = useState(1000);
-  const [betAmount, setBetAmount] = useState(10);
-  const [rollUnder, setRollUnder] = useState(50);
-  const [diceResult, setDiceResult] = useState<number | null>(null);
-  const [isRolling, setIsRolling] = useState(false);
-  const [lastWin, setLastWin] = useState<number | null>(null);
+  const [balance, setBalance] = useState(1000)
+  const [betAmount, setBetAmount] = useState(10)
+  const [rollUnder, setRollUnder] = useState(50)
+  const [diceResult, setDiceResult] = useState<number | null>(null)
+  const [isRolling, setIsRolling] = useState(false)
+  const [lastWin, setLastWin] = useState<number | null>(null)
 
-  const multiplier = (100 / rollUnder).toFixed(2);
-  const winChance = rollUnder;
+  const multiplier = (100 / rollUnder).toFixed(2)
+  const winChance = rollUnder
 
   const rollDice = async () => {
-    if (betAmount < 1 || betAmount > balance) return;
+    if (betAmount < 1 || betAmount > balance) return
 
-    setIsRolling(true);
-    setBalance((prev) => prev - betAmount);
-    setLastWin(null);
+    setIsRolling(true)
+    setBalance((prev) => prev - betAmount)
+    setLastWin(null)
 
     // Simulate rolling animation
     const rollAnimation = setInterval(() => {
-      setDiceResult(Math.floor(Math.random() * 100) + 1);
-    }, 50);
+      setDiceResult(Math.floor(Math.random() * 100) + 1)
+    }, 50)
 
     setTimeout(() => {
-      clearInterval(rollAnimation);
-      const result = Math.floor(Math.random() * 100) + 1;
-      setDiceResult(result);
+      clearInterval(rollAnimation)
+      const result = Math.floor(Math.random() * 100) + 1
+      setDiceResult(result)
 
       if (result < rollUnder) {
-        const winnings = betAmount * Number.parseFloat(multiplier);
-        setBalance((prev) => prev + winnings);
-        setLastWin(winnings);
+        const winnings = betAmount * Number.parseFloat(multiplier)
+        setBalance((prev) => prev + winnings)
+        setLastWin(winnings)
       }
 
-      setIsRolling(false);
-    }, 1000);
-  };
+      setIsRolling(false)
+    }, 1000)
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -54,13 +54,9 @@ function RouteComponent() {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">
-              Balance
-            </span>
+            <span className="text-sm font-medium text-muted-foreground">Balance</span>
           </div>
-          <span className="text-2xl font-bold text-primary">
-            ${balance.toFixed(2)}
-          </span>
+          <span className="text-2xl font-bold text-primary">${balance.toFixed(2)}</span>
         </div>
 
         {/* Dice Display */}
@@ -68,29 +64,21 @@ function RouteComponent() {
           <Dices className="h-16 w-16 text-primary" />
           {diceResult !== null && (
             <div className="text-center">
-              <div className="text-6xl font-bold text-primary">
-                {diceResult}
-              </div>
+              <div className="text-6xl font-bold text-primary">{diceResult}</div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {diceResult < rollUnder ? 'You Win!' : 'You Lose!'}
               </p>
             </div>
           )}
-          {diceResult === null && (
-            <p className="text-muted-foreground">Roll to start</p>
-          )}
+          {diceResult === null && <p className="text-muted-foreground">Roll to start</p>}
         </div>
 
         {/* Win/Loss Indicator */}
         {lastWin !== null && (
           <Card className="mb-6 border-primary/50 bg-primary/10 p-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-primary">
-                Won ${lastWin.toFixed(2)}!
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Multiplier: {multiplier}x
-              </p>
+              <p className="text-lg font-semibold text-primary">Won ${lastWin.toFixed(2)}!</p>
+              <p className="text-sm text-muted-foreground">Multiplier: {multiplier}x</p>
             </div>
           </Card>
         )}
@@ -99,25 +87,24 @@ function RouteComponent() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="bet-amount">Bet Amount</Label>
-            {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
             <Input
+              className="bg-background"
+              disabled={isRolling}
               id="bet-amount"
+              max={balance}
+              min={1}
+              onChange={(e) => setBetAmount(Number(e.target.value))}
               type="number"
               value={betAmount}
-              onChange={(e) => setBetAmount(Number(e.target.value))}
-              disabled={isRolling}
-              min={1}
-              max={balance}
-              className="bg-background"
             />
             <div className="grid grid-cols-4 gap-2">
               {[10, 25, 50, 100].map((amount) => (
                 <Button
-                  key={amount}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBetAmount(amount)}
                   disabled={isRolling}
+                  key={amount}
+                  onClick={() => setBetAmount(amount)}
+                  size="sm"
+                  variant="outline"
                 >
                   ${amount}
                 </Button>
@@ -130,16 +117,15 @@ function RouteComponent() {
               <Label htmlFor="roll-under">Roll Under</Label>
               <span className="text-sm text-muted-foreground">{rollUnder}</span>
             </div>
-            {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
             <input
-              id="roll-under"
-              type="range"
-              min="2"
-              max="98"
-              value={rollUnder}
-              onChange={(e) => setRollUnder(Number(e.target.value))}
-              disabled={isRolling}
               className="w-full accent-primary"
+              disabled={isRolling}
+              id="roll-under"
+              max="98"
+              min="2"
+              onChange={(e) => setRollUnder(Number(e.target.value))}
+              type="range"
+              value={rollUnder}
             />
             <div className="grid grid-cols-2 gap-4 text-center text-sm">
               <div>
@@ -154,9 +140,9 @@ function RouteComponent() {
           </div>
 
           <Button
-            onClick={rollDice}
-            disabled={isRolling || betAmount < 1 || betAmount > balance}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isRolling || betAmount < 1 || betAmount > balance}
+            onClick={rollDice}
             size="lg"
           >
             {isRolling ? 'Rolling...' : 'Roll Dice'}
@@ -182,5 +168,5 @@ function RouteComponent() {
         </ul>
       </Card>
     </div>
-  );
+  )
 }

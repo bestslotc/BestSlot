@@ -1,10 +1,10 @@
-import { adminClient } from 'better-auth/client/plugins';
-import { createAuthClient } from 'better-auth/react';
+import { adminClient } from 'better-auth/client/plugins'
+import { createAuthClient } from 'better-auth/react'
 
 const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   plugins: [adminClient()],
-});
+})
 
 export const {
   signUp,
@@ -16,4 +16,4 @@ export const {
   resetPassword,
   updateUser,
   getSession,
-} = authClient;
+} = authClient

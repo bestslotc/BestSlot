@@ -1,10 +1,10 @@
 import {
-	THEME_COOKIE_NAME,
-	COOKIE_EXPIRY_DAYS,
-	MILLISECONDS_PER_DAY,
-	DARK_MODE_MEDIA_QUERY,
-	THEME_CLASSES,
-} from './constants';
+  COOKIE_EXPIRY_DAYS,
+  DARK_MODE_MEDIA_QUERY,
+  MILLISECONDS_PER_DAY,
+  THEME_CLASSES,
+  THEME_COOKIE_NAME,
+} from './constants'
 
 export const themeScript = `
 	(function() {
@@ -39,4 +39,4 @@ export const themeScript = `
 		
 		root.classList.add(resolvedTheme);
 	})();
-`;
+`

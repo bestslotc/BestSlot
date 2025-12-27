@@ -1,9 +1,9 @@
-import Header from '@/components/layout/header';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
+import Header from '@/components/layout/header'
 
 export const Route = createFileRoute('/auth/data-deletion-instructions')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
   return (
@@ -13,5 +13,5 @@ function RouteComponent() {
         <h1>Data Deletion Instructions</h1>
       </div>
     </div>
-  );
+  )
 }

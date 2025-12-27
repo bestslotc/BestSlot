@@ -18,26 +18,26 @@
  * @returns {number} Crash multiplier (>= 1.00), rounded to 2 decimal places.
  */
 export const generateCrashPoint = (): number => {
-  const houseEdge = 0.03; // 3% house edge → RTP = 97%
-  const minMultiplier = 1.0;
-  const maxMultiplier = 1000; // Cap to prevent extreme values
+  const houseEdge = 0.03 // 3% house edge → RTP = 97%
+  const minMultiplier = 1.0
+  const maxMultiplier = 1000 // Cap to prevent extreme values
 
   // Generate uniform random number in (0, 1]
   // Use (1 - Math.random()) to avoid division by zero
-  const u = 1 - Math.random();
+  const u = 1 - Math.random()
 
   // Fair crash point with house edge: multiplier = (1 - houseEdge) / u
-  let crash = (1 - houseEdge) / u;
+  let crash = (1 - houseEdge) / u
 
   // Enforce bounds
-  crash = Math.max(minMultiplier, Math.min(crash, maxMultiplier));
+  crash = Math.max(minMultiplier, Math.min(crash, maxMultiplier))
 
   // Optional: Add a tiny chance (e.g., 0.5%) of a "jackpot" multiplier > 100x
   // This is for psychological excitement but keeps EV negative
   if (Math.random() < 0.005 && crash < 100) {
-    crash = 100 + Math.random() * 900; // 100x to 1000x
+    crash = 100 + Math.random() * 900 // 100x to 1000x
   }
 
   // Round to 2 decimal places for display consistency
-  return Math.round(crash * 100) / 100;
-};
+  return Math.round(crash * 100) / 100
+}

@@ -1,17 +1,12 @@
 {
-    "projectName": "app",
-    "mode": "file-router",
-    "typescript": true,
-    "tailwind": true,
-    "packageManager": "bun",
-    "addOnOptions": {},
-    "git": true,
-    "version": 1,
-    "framework": "react-cra",
-    "chosenAddOns": [
-        "biome",
-        "nitro",
-        "start",
-        "shadcn"
-    ]
+  "projectName": "app",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "bun",
+  "addOnOptions": {},
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": ["biome", "nitro", "start", "shadcn"]
 }

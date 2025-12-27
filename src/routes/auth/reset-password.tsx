@@ -1,20 +1,20 @@
-import { Button } from '@/components/ui/button';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ResetPasswordForm } from '@/components/auth/reset-password-form';
-import { ChevronLeft, Lock } from 'lucide-react';
-import { z } from 'zod';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ChevronLeft, Lock } from 'lucide-react'
+import { z } from 'zod'
+import { ResetPasswordForm } from '@/components/auth/reset-password-form'
+import { Button } from '@/components/ui/button'
 
 const passwordResetSchema = z.object({
   token: z.string().catch(''),
-});
+})
 
 export const Route = createFileRoute('/auth/reset-password')({
   component: RouteComponent,
   validateSearch: (search) => passwordResetSchema.parse(search),
-});
+})
 
 function RouteComponent() {
-  const { token } = Route.useSearch();
+  const { token } = Route.useSearch()
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-accent/5 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -26,20 +26,16 @@ function RouteComponent() {
             <div className="flex items-center gap-3">
               <Link to="/auth/signin">
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                  size="icon"
+                  variant="ghost"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Reset Password
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Create a new secure password
-                </p>
+                <h1 className="text-2xl font-bold text-foreground">Reset Password</h1>
+                <p className="text-sm text-muted-foreground mt-1">Create a new secure password</p>
               </div>
             </div>
 
@@ -67,8 +63,8 @@ function RouteComponent() {
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
                 <Link
-                  to="/auth/signin"
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
+                  to="/auth/signin"
                 >
                   Sign in
                 </Link>
@@ -78,5 +74,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }

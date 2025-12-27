@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { createFileRoute } from '@tanstack/react-router'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export const Route = createFileRoute('/api/admin/deposit/requests')({
   server: {
@@ -10,36 +10,36 @@ export const Route = createFileRoute('/api/admin/deposit/requests')({
         try {
           const session = await auth.api.getSession({
             headers: request.headers,
-          });
-          if (!session?.user?.id)
-            return new Response('Unauthorized', { status: 401 });
+          })
+          if (!session?.user?.id) return new Response('Unauthorized', { status: 401 })
 
           // Admin Check
           const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { role: true, isActive: true },
-          });
+          })
           if (!user || user.role !== 'ADMIN' || !user.isActive) {
             return new Response(JSON.stringify({ error: 'Forbidden' }), {
               status: 403,
-            });
+            })
           }
 
           // Parsing Query Params (Standard URL API)
-          const { searchParams } = new URL(request.url);
-          const status = searchParams.get('status');
-          const paymentMethod = searchParams.get('paymentMethod');
-          const page = parseInt(searchParams.get('page') || '1', 10);
-          const limit = parseInt(searchParams.get('limit') || '20', 10);
-          const sortBy = searchParams.get('sortBy') || 'createdAt';
-          const sortOrder = searchParams.get('sortOrder') || 'desc';
+          const { searchParams } = new URL(request.url)
+          const status = searchParams.get('status')
+          const paymentMethod = searchParams.get('paymentMethod')
+          const page = parseInt(searchParams.get('page') || '1', 10)
+          const limit = parseInt(searchParams.get('limit') || '20', 10)
+          const sortBy = searchParams.get('sortBy') || 'createdAt'
+          const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-          const where: any = {};
-          if (status) where.status = status;
-          if (paymentMethod) where.paymentMethod = paymentMethod;
+          // biome-ignore lint/suspicious/noExplicitAny: this is fine
+          const where: any = {}
+          if (status) where.status = status
+          if (paymentMethod) where.paymentMethod = paymentMethod
 
-          const skip = (page - 1) * limit;
-          const orderBy = { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' };
+          const skip = (page - 1) * limit
+          const orderBy = { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' }
 
           const [requests, totalCount, stats] = await Promise.all([
             prisma.depositRequest.findMany({
@@ -59,7 +59,7 @@ export const Route = createFileRoute('/api/admin/deposit/requests')({
               _count: { id: true },
               _sum: { amount: true },
             }),
-          ]);
+          ])
 
           const responseData = {
             success: true,
@@ -73,56 +73,56 @@ export const Route = createFileRoute('/api/admin/deposit/requests')({
               },
               summary: {
                 total: totalCount,
-                pending:
-                  stats.find((s) => s.status === 'PENDING')?._count.id || 0,
-                totalPendingAmount:
-                  stats.find((s) => s.status === 'PENDING')?._sum.amount || 0,
+                pending: stats.find((s) => s.status === 'PENDING')?._count.id || 0,
+                totalPendingAmount: stats.find((s) => s.status === 'PENDING')?._sum.amount || 0,
               },
             },
-          };
+          }
 
           return new Response(JSON.stringify(responseData), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
-          });
-        } catch (error) {
+          })
+        } catch (_error) {
           return new Response(JSON.stringify({ error: 'Fetch failed' }), {
             status: 500,
-          });
+          })
         }
       },
 
+      // --- POST: APPROVE/REJECT ---
       // --- POST: APPROVE/REJECT ---
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({
             headers: request.headers,
-          });
-          const adminId = session?.user?.id;
-          if (!adminId) return new Response('Unauthorized', { status: 401 });
+          })
+          const adminId = session?.user?.id
+          if (!adminId) return new Response('Unauthorized', { status: 401 })
 
-          const body = await request.json();
-          const { depositRequestId, action, adminNotes, rejectionReason } =
-            body;
+          const body = await request.json()
+          const { depositRequestId, action, adminNotes, rejectionReason } = body
 
           const depositRequest = await prisma.depositRequest.findUnique({
             where: { id: depositRequestId },
             include: { user: { include: { wallet: true } } },
-          });
+          })
 
           if (!depositRequest || depositRequest.status !== 'PENDING') {
-            return new Response(JSON.stringify({ error: 'Invalid Request' }), {
+            return new Response(JSON.stringify({ error: 'Invalid or already processed request' }), {
               status: 400,
-            });
+            })
           }
 
+          // --- CASE: APPROVE ---
           if (action === 'APPROVE') {
             const result = await prisma.$transaction(async (tx) => {
-              const wallet = depositRequest.user.wallet!;
+              // biome-ignore lint/style/noNonNullAssertion: this is fine
+              const wallet = depositRequest.user.wallet!
               const updatedWallet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { increment: depositRequest.amount } },
-              });
+              })
 
               const transaction = await tx.transaction.create({
                 data: {
@@ -134,7 +134,7 @@ export const Route = createFileRoute('/api/admin/deposit/requests')({
                   balanceBefore: wallet.balance,
                   balanceAfter: updatedWallet.balance,
                 },
-              });
+              })
 
               return await tx.depositRequest.update({
                 where: { id: depositRequestId },
@@ -142,27 +142,42 @@ export const Route = createFileRoute('/api/admin/deposit/requests')({
                   status: 'APPROVED',
                   reviewedBy: adminId,
                   transactionId: transaction.id,
+                  adminNotes,
                 },
-              });
-            });
+              })
+            })
 
-            return new Response(
-              JSON.stringify({ success: true, data: result }),
-              { status: 200 },
-            );
+            return new Response(JSON.stringify({ success: true, data: result }), { status: 200 })
           }
 
-          // Logic for REJECT would follow same transaction pattern here...
-          return new Response(
-            JSON.stringify({ success: true, message: 'Processed' }),
-            { status: 200 },
-          );
+          // --- CASE: REJECT ---
+          if (action === 'REJECT') {
+            if (!rejectionReason) {
+              return new Response(JSON.stringify({ error: 'Rejection reason is required' }), {
+                status: 400,
+              })
+            }
+
+            const result = await prisma.depositRequest.update({
+              where: { id: depositRequestId },
+              data: {
+                status: 'REJECTED',
+                reviewedBy: adminId,
+                adminNotes,
+                rejectionReason, // Store why it was denied
+              },
+            })
+
+            return new Response(JSON.stringify({ success: true, data: result }), { status: 200 })
+          }
+
+          // Fallback for unknown actions
+          return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400 })
         } catch (error) {
-          return new Response(JSON.stringify({ error: 'Update failed' }), {
-            status: 500,
-          });
+          console.error('Update Error:', error) // Log the error for debugging
+          return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500 })
         }
       },
     },
   },
-});
+})

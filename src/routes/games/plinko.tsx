@@ -1,59 +1,59 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { Circle, Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { createFileRoute } from '@tanstack/react-router'
+import { Circle, Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export const Route = createFileRoute('/games/plinko')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const [balance, setBalance] = useState(1000);
-  const [betAmount, setBetAmount] = useState(10);
-  const [risk, setRisk] = useState<'low' | 'medium' | 'high'>('medium');
-  const [isDropping, setIsDropping] = useState(false);
-  const [lastMultiplier, setLastMultiplier] = useState<number | null>(null);
-  const [_ballPath, setBallPath] = useState<number[]>([]);
+  const [balance, setBalance] = useState(1000)
+  const [betAmount, setBetAmount] = useState(10)
+  const [risk, setRisk] = useState<'low' | 'medium' | 'high'>('medium')
+  const [isDropping, setIsDropping] = useState(false)
+  const [lastMultiplier, setLastMultiplier] = useState<number | null>(null)
+  const [_ballPath, setBallPath] = useState<number[]>([])
 
   const multipliers = {
     low: [1.5, 1.3, 1.1, 1.0, 0.5, 1.0, 1.1, 1.3, 1.5],
     medium: [3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0],
     high: [5.0, 2.0, 1.0, 0.5, 0.2, 0.5, 1.0, 2.0, 5.0],
-  };
+  }
 
   const dropBall = async () => {
-    if (betAmount < 1 || betAmount > balance) return;
+    if (betAmount < 1 || betAmount > balance) return
 
-    setIsDropping(true);
-    setBalance((prev) => prev - betAmount);
-    setLastMultiplier(null);
+    setIsDropping(true)
+    setBalance((prev) => prev - betAmount)
+    setLastMultiplier(null)
 
     // Simulate ball dropping through pegs
-    const path: number[] = [];
-    let position = 4; // Start from middle
+    const path: number[] = []
+    let position = 4 // Start from middle
 
     for (let i = 0; i < 8; i++) {
-      const direction = Math.random() > 0.5 ? 1 : -1;
-      position = Math.max(0, Math.min(8, position + direction));
-      path.push(position);
-      setBallPath([...path]);
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      const direction = Math.random() > 0.5 ? 1 : -1
+      position = Math.max(0, Math.min(8, position + direction))
+      path.push(position)
+      setBallPath([...path])
+      await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
     // Final position determines multiplier
-    const finalMultiplier = multipliers[risk][position];
-    setLastMultiplier(finalMultiplier);
-    const winnings = betAmount * finalMultiplier;
-    setBalance((prev) => prev + winnings);
+    const finalMultiplier = multipliers[risk][position]
+    setLastMultiplier(finalMultiplier)
+    const winnings = betAmount * finalMultiplier
+    setBalance((prev) => prev + winnings)
 
     setTimeout(() => {
-      setIsDropping(false);
-      setBallPath([]);
-    }, 2000);
-  };
+      setIsDropping(false)
+      setBallPath([])
+    }, 2000)
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -61,13 +61,9 @@ function RouteComponent() {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">
-              Balance
-            </span>
+            <span className="text-sm font-medium text-muted-foreground">Balance</span>
           </div>
-          <span className="text-2xl font-bold text-primary">
-            ${balance.toFixed(2)}
-          </span>
+          <span className="text-2xl font-bold text-primary">${balance.toFixed(2)}</span>
         </div>
 
         {/* Plinko Board */}
@@ -76,10 +72,10 @@ function RouteComponent() {
             {/* Pegs */}
             {Array.from({ length: 9 }).map((_, row) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-              <div key={row} className="flex gap-4">
+              <div className="flex gap-4" key={row}>
                 {Array.from({ length: row + 1 }).map((_, col) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-                  <Circle key={col} className="h-3 w-3 fill-muted text-muted" />
+                  <Circle className="h-3 w-3 fill-muted text-muted" key={col} />
                 ))}
               </div>
             ))}
@@ -88,8 +84,6 @@ function RouteComponent() {
             <div className="mt-4 grid grid-cols-9 gap-2">
               {multipliers[risk].map((mult, idx) => (
                 <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-                  key={idx}
                   className={`rounded p-2 text-center text-xs font-bold ${
                     mult >= 2
                       ? 'bg-primary/20 text-primary'
@@ -97,6 +91,8 @@ function RouteComponent() {
                         ? 'bg-destructive/20 text-destructive'
                         : 'bg-muted/50 text-muted-foreground'
                   }`}
+                  // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
+                  key={idx}
                 >
                   {mult}x
                 </div>
@@ -114,9 +110,7 @@ function RouteComponent() {
                   ? `Won $${(betAmount * lastMultiplier).toFixed(2)}!`
                   : `Lost $${betAmount.toFixed(2)}`}
               </p>
-              <p className="text-sm text-muted-foreground">
-                Multiplier: {lastMultiplier}x
-              </p>
+              <p className="text-sm text-muted-foreground">Multiplier: {lastMultiplier}x</p>
             </div>
           </Card>
         )}
@@ -125,25 +119,24 @@ function RouteComponent() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="bet-amount">Bet Amount</Label>
-            {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
             <Input
+              className="bg-background"
+              disabled={isDropping}
               id="bet-amount"
+              max={balance}
+              min={1}
+              onChange={(e) => setBetAmount(Number(e.target.value))}
               type="number"
               value={betAmount}
-              onChange={(e) => setBetAmount(Number(e.target.value))}
-              disabled={isDropping}
-              min={1}
-              max={balance}
-              className="bg-background"
             />
             <div className="grid grid-cols-4 gap-2">
               {[10, 25, 50, 100].map((amount) => (
                 <Button
-                  key={amount}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBetAmount(amount)}
                   disabled={isDropping}
+                  key={amount}
+                  onClick={() => setBetAmount(amount)}
+                  size="sm"
+                  variant="outline"
                 >
                   ${amount}
                 </Button>
@@ -156,11 +149,11 @@ function RouteComponent() {
             <div className="grid grid-cols-3 gap-2">
               {(['low', 'medium', 'high'] as const).map((level) => (
                 <Button
-                  key={level}
-                  variant={risk === level ? 'default' : 'outline'}
-                  onClick={() => setRisk(level)}
-                  disabled={isDropping}
                   className="capitalize"
+                  disabled={isDropping}
+                  key={level}
+                  onClick={() => setRisk(level)}
+                  variant={risk === level ? 'default' : 'outline'}
                 >
                   {level}
                 </Button>
@@ -169,9 +162,9 @@ function RouteComponent() {
           </div>
 
           <Button
-            onClick={dropBall}
-            disabled={isDropping || betAmount < 1 || betAmount > balance}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isDropping || betAmount < 1 || betAmount > balance}
+            onClick={dropBall}
             size="lg"
           >
             {isDropping ? 'Dropping...' : 'Drop Ball'}
@@ -197,5 +190,5 @@ function RouteComponent() {
         </ul>
       </Card>
     </div>
-  );
+  )
 }

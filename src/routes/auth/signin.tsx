@@ -1,14 +1,10 @@
-import { LoginForm } from '@/components/auth/signin-form';
-import Header from '@/components/layout/header';
-import { guestMiddleware } from '@/lib/auth-middleware';
-import { createFileRoute } from '@tanstack/react-router';
+import { LoginForm } from '@/components/auth/signin-form'
+import Header from '@/components/layout/header'
+import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/auth/signin')({
   component: RouteComponent,
-  server: {
-    middleware: [guestMiddleware],
-  },
-});
+})
 
 function RouteComponent() {
   return (
@@ -20,5 +16,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }

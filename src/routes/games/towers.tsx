@@ -1,139 +1,132 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { Trophy, Wallet } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { createFileRoute } from '@tanstack/react-router'
+import { Trophy, Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
-type TileState = 'hidden' | 'safe' | 'trap';
+type TileState = 'hidden' | 'safe' | 'trap'
 
 export const Route = createFileRoute('/games/towers')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
-  const [balance, setBalance] = useState(1000);
-  const [betAmount, setBetAmount] = useState(10);
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>(
-    'medium',
-  );
-  const [gameActive, setGameActive] = useState(false);
-  const [currentLevel, setCurrentLevel] = useState(0);
-  const [multiplier, setMultiplier] = useState(1);
-  const [tiles, setTiles] = useState<TileState[][]>([]);
+  const [balance, setBalance] = useState(1000)
+  const [betAmount, setBetAmount] = useState(10)
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
+  const [gameActive, setGameActive] = useState(false)
+  const [currentLevel, setCurrentLevel] = useState(0)
+  const [multiplier, setMultiplier] = useState(1)
+  const [tiles, setTiles] = useState<TileState[][]>([])
 
-  const LEVELS = 8;
-  const tilesPerLevel = { easy: 3, medium: 4, hard: 5 };
-  const safePerLevel = { easy: 2, medium: 2, hard: 2 };
+  const LEVELS = 8
+  const tilesPerLevel = { easy: 3, medium: 4, hard: 5 }
+  const safePerLevel = { easy: 2, medium: 2, hard: 2 }
 
   const startGame = () => {
-    if (betAmount < 1 || betAmount > balance) return;
+    if (betAmount < 1 || betAmount > balance) return
 
-    setBalance((prev) => prev - betAmount);
-    setGameActive(true);
-    setCurrentLevel(0);
-    setMultiplier(1);
-    generateTowers();
-  };
+    setBalance((prev) => prev - betAmount)
+    setGameActive(true)
+    setCurrentLevel(0)
+    setMultiplier(1)
+    generateTowers()
+  }
 
   const generateTowers = () => {
-    const newTiles: TileState[][] = [];
-    const tilesCount = tilesPerLevel[difficulty];
-    const safeCount = safePerLevel[difficulty];
+    const newTiles: TileState[][] = []
+    const tilesCount = tilesPerLevel[difficulty]
+    const safeCount = safePerLevel[difficulty]
 
     for (let level = 0; level < LEVELS; level++) {
-      const levelTiles: TileState[] = Array(tilesCount).fill('trap');
+      const levelTiles: TileState[] = Array(tilesCount).fill('trap')
 
       // Randomly place safe tiles
-      const safePositions = new Set<number>();
+      const safePositions = new Set<number>()
       while (safePositions.size < safeCount) {
-        safePositions.add(Math.floor(Math.random() * tilesCount));
+        safePositions.add(Math.floor(Math.random() * tilesCount))
       }
 
       safePositions.forEach((pos) => {
-        levelTiles[pos] = 'safe';
-      });
+        levelTiles[pos] = 'safe'
+      })
 
-      newTiles.push(levelTiles.map(() => 'hidden'));
+      newTiles.push(levelTiles.map(() => 'hidden'))
     }
 
-    setTiles(newTiles);
-  };
+    setTiles(newTiles)
+  }
 
   const selectTile = (level: number, tileIndex: number) => {
-    if (
-      !gameActive ||
-      level !== currentLevel ||
-      tiles[level][tileIndex] !== 'hidden'
-    )
-      return;
+    if (!gameActive || level !== currentLevel || tiles[level][tileIndex] !== 'hidden') return
 
-    const newTiles = [...tiles];
-    const actualTiles = generateActualTiles();
+    const newTiles = [...tiles]
+    const actualTiles = generateActualTiles()
 
     if (actualTiles[level][tileIndex] === 'safe') {
-      newTiles[level][tileIndex] = 'safe';
-      setTiles(newTiles);
+      newTiles[level][tileIndex] = 'safe'
+      setTiles(newTiles)
 
-      const newMultiplier = multiplier * 1.4;
-      setMultiplier(newMultiplier);
+      const newMultiplier = multiplier * 1.4
+      setMultiplier(newMultiplier)
 
       if (level === LEVELS - 1) {
         // Won the game
-        const winnings = betAmount * newMultiplier;
-        setBalance((prev) => prev + winnings);
-        setGameActive(false);
+        const winnings = betAmount * newMultiplier
+        setBalance((prev) => prev + winnings)
+        setGameActive(false)
       } else {
-        setCurrentLevel(level + 1);
+        setCurrentLevel(level + 1)
       }
     } else {
       // Hit a trap
-      newTiles[level][tileIndex] = 'trap';
+      newTiles[level][tileIndex] = 'trap'
       // Reveal all tiles
       for (let i = 0; i < LEVELS; i++) {
-        newTiles[i] = actualTiles[i];
+        newTiles[i] = actualTiles[i]
       }
-      setTiles(newTiles);
-      setGameActive(false);
+      setTiles(newTiles)
+      setGameActive(false)
     }
-  };
+  }
 
   const generateActualTiles = (): TileState[][] => {
-    const newTiles: TileState[][] = [];
-    const tilesCount = tilesPerLevel[difficulty];
-    const safeCount = safePerLevel[difficulty];
+    const newTiles: TileState[][] = []
+    const tilesCount = tilesPerLevel[difficulty]
+    const safeCount = safePerLevel[difficulty]
 
     for (let level = 0; level < LEVELS; level++) {
-      const levelTiles: TileState[] = Array(tilesCount).fill('trap');
+      const levelTiles: TileState[] = Array(tilesCount).fill('trap')
 
-      const safePositions = new Set<number>();
+      const safePositions = new Set<number>()
       while (safePositions.size < safeCount) {
-        safePositions.add(Math.floor(Math.random() * tilesCount));
+        safePositions.add(Math.floor(Math.random() * tilesCount))
       }
 
       safePositions.forEach((pos) => {
-        levelTiles[pos] = 'safe';
-      });
+        levelTiles[pos] = 'safe'
+      })
 
-      newTiles.push(levelTiles);
+      newTiles.push(levelTiles)
     }
 
-    return newTiles;
-  };
+    return newTiles
+  }
 
   const cashOut = () => {
-    if (!gameActive || currentLevel === 0) return;
+    if (!gameActive || currentLevel === 0) return
 
-    const winnings = betAmount * multiplier;
-    setBalance((prev) => prev + winnings);
-    setGameActive(false);
+    const winnings = betAmount * multiplier
+    setBalance((prev) => prev + winnings)
+    setGameActive(false)
 
     // Reveal remaining tiles
-    const actualTiles = generateActualTiles();
-    setTiles(actualTiles);
-  };
+    const actualTiles = generateActualTiles()
+    setTiles(actualTiles)
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -141,13 +134,9 @@ function RouteComponent() {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">
-              Balance
-            </span>
+            <span className="text-sm font-medium text-muted-foreground">Balance</span>
           </div>
-          <span className="text-2xl font-bold text-primary">
-            ${balance.toFixed(2)}
-          </span>
+          <span className="text-2xl font-bold text-primary">${balance.toFixed(2)}</span>
         </div>
 
         {/* Game Stats */}
@@ -161,9 +150,7 @@ function RouteComponent() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Multiplier</p>
-              <p className="text-2xl font-bold text-primary">
-                {multiplier.toFixed(2)}x
-              </p>
+              <p className="text-2xl font-bold text-primary">{multiplier.toFixed(2)}x</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Potential</p>
@@ -179,44 +166,32 @@ function RouteComponent() {
           <div className="flex flex-col-reverse gap-2">
             {tiles.map((level, levelIndex) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: this is acceptable here
-              <div key={levelIndex} className="flex justify-center gap-2">
+              <div className="flex justify-center gap-2" key={levelIndex}>
                 <div className="flex w-8 items-center justify-center text-xs text-muted-foreground">
                   {levelIndex + 1}
                 </div>
                 {level.map((tile, tileIndex) => (
                   <button
-                    type="button"
+                    className={cn(
+                      'h-12 w-12 rounded-lg<explanation> border-2 transition-all',
+                      tile === 'hidden' && levelIndex === currentLevel && gameActive
+                        ? 'border-border/50 bg-accent/50 hover:border-primary hover:bg-accent hover:scale-105 cursor-pointer'
+                        : '',
+                      tile === 'hidden' && (levelIndex !== currentLevel || !gameActive)
+                        ? 'border-border/30 bg-accent/30 cursor-not-allowed'
+                        : '',
+                      tile === 'safe' && 'border-primary bg-primary/20 shadow-lg shadow-primary/30',
+                      tile === 'trap' &&
+                        'border-destructive bg-destructive/20 shadow-lg shadow-destructive/30'
+                    )}
+                    disabled={!gameActive || levelIndex !== currentLevel || tile !== 'hidden'}
                     // biome-ignore lint/suspicious/noArrayIndexKey: this is acceptable here
                     key={tileIndex}
                     onClick={() => selectTile(levelIndex, tileIndex)}
-                    disabled={
-                      !gameActive ||
-                      levelIndex !== currentLevel ||
-                      tile !== 'hidden'
-                    }
-                    className={cn(
-                      'h-12 w-12 rounded-lg<explanation> border-2 transition-all',
-                      tile === 'hidden' &&
-                        levelIndex === currentLevel &&
-                        gameActive
-                        ? 'border-border/50 bg-accent/50 hover:border-primary hover:bg-accent hover:scale-105 cursor-pointer'
-                        : '',
-                      tile === 'hidden' &&
-                        (levelIndex !== currentLevel || !gameActive)
-                        ? 'border-border/30 bg-accent/30 cursor-not-allowed'
-                        : '',
-                      tile === 'safe' &&
-                        'border-primary bg-primary/20 shadow-lg shadow-primary/30',
-                      tile === 'trap' &&
-                        'border-destructive bg-destructive/20 shadow-lg shadow-destructive/30',
-                    )}
+                    type="button"
                   >
-                    {tile === 'safe' && (
-                      <Trophy className="h-5 w-5 text-primary" />
-                    )}
-                    {tile === 'trap' && (
-                      <span className="text-lg text-destructive">✕</span>
-                    )}
+                    {tile === 'safe' && <Trophy className="h-5 w-5 text-primary" />}
+                    {tile === 'trap' && <span className="text-lg text-destructive">✕</span>}
                   </button>
                 ))}
               </div>
@@ -229,23 +204,22 @@ function RouteComponent() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="bet-amount">Bet Amount</Label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: ignored */}
               <Input
+                className="bg-background"
                 id="bet-amount"
+                max={balance}
+                min={1}
+                onChange={(e) => setBetAmount(Number(e.target.value))}
                 type="number"
                 value={betAmount}
-                onChange={(e) => setBetAmount(Number(e.target.value))}
-                min={1}
-                max={balance}
-                className="bg-background"
               />
               <div className="grid grid-cols-4 gap-2">
                 {[10, 25, 50, 100].map((amount) => (
                   <Button
                     key={amount}
-                    variant="outline"
-                    size="sm"
                     onClick={() => setBetAmount(amount)}
+                    size="sm"
+                    variant="outline"
                   >
                     ${amount}
                   </Button>
@@ -258,10 +232,10 @@ function RouteComponent() {
               <div className="grid grid-cols-3 gap-2">
                 {(['easy', 'medium', 'hard'] as const).map((level) => (
                   <Button
-                    key={level}
-                    variant={difficulty === level ? 'default' : 'outline'}
-                    onClick={() => setDifficulty(level)}
                     className="capitalize"
+                    key={level}
+                    onClick={() => setDifficulty(level)}
+                    variant={difficulty === level ? 'default' : 'outline'}
                   >
                     {level}
                   </Button>
@@ -270,9 +244,9 @@ function RouteComponent() {
             </div>
 
             <Button
-              onClick={startGame}
-              disabled={betAmount < 1 || betAmount > balance}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={betAmount < 1 || betAmount > balance}
+              onClick={startGame}
               size="lg"
             >
               Start Climb
@@ -282,11 +256,11 @@ function RouteComponent() {
 
         {gameActive && (
           <Button
-            onClick={cashOut}
-            disabled={currentLevel === 0}
-            variant="outline"
             className="w-full bg-transparent"
+            disabled={currentLevel === 0}
+            onClick={cashOut}
             size="lg"
+            variant="outline"
           >
             Cash Out ${(betAmount * multiplier).toFixed(2)}
           </Button>
@@ -315,5 +289,5 @@ function RouteComponent() {
         </ul>
       </Card>
     </div>
-  );
+  )
 }

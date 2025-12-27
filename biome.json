@@ -1,25 +1,23 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "vcs": {
-    "enabled": false,
+    "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": false
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": [
-      "**/src/**/*",
-      "**/.vscode/**/*",
-      "**/index.html",
-      "**/vite.config.js",
-      "!**/src/routeTree.gen.ts",
-      "!**/src/styles.css"
-    ]
+    "maxSize": 10485760,
+    "includes": ["**", "!**/src/routeTree.gen.ts", "!**/src/lib/generated"]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf",
+    "formatWithErrors": false
   },
   "assist": {
     "actions": {
@@ -31,19 +29,64 @@
   },
   "linter": {
     "enabled": true,
-    "domains": {
-      "project": "recommended"
-    },
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedImports": "error"
+        "noUnusedImports": "error",
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "error",
+        "useUniqueElementIds": "off",
+        "noChildrenProp": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useConst": "error",
+        "useTemplate": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      },
+      "complexity": {
+        "noForEach": "off"
+      },
+      "a11y": {
+        "useAltText": "warn",
+        "useKeyWithClickEvents": "warn"
       }
     }
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "single"
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "es5",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
+    }
+  },
+  "css": {
+    "linter": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": true
     }
   }
 }

@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { createFileRoute } from '@tanstack/react-router'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export const Route = createFileRoute('/api/users/wallet/balance')({
   server: {
@@ -10,13 +10,13 @@ export const Route = createFileRoute('/api/users/wallet/balance')({
           // 1. Authenticate using request headers
           const session = await auth.api.getSession({
             headers: request.headers,
-          });
+          })
 
           if (!session?.user?.id) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), {
               status: 401,
               headers: { 'Content-Type': 'application/json' },
-            });
+            })
           }
 
           // 2. Fetch or Create Wallet
@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/users/wallet/balance')({
               currency: true,
               updatedAt: true,
             },
-          });
+          })
 
           if (!wallet) {
             wallet = await prisma.wallet.create({
@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/users/wallet/balance')({
                 currency: true,
                 updatedAt: true,
               },
-            });
+            })
           }
 
           // 3. Construct the JSON response
@@ -52,22 +52,19 @@ export const Route = createFileRoute('/api/users/wallet/balance')({
             lockedBalance: Number(wallet.lockedBalance),
             currency: wallet.currency,
             updatedAt: wallet.updatedAt,
-          };
+          }
 
           return new Response(JSON.stringify(responseBody), {
             status: 200,
-          });
+          })
         } catch (error) {
-          console.error('Wallet API Error:', error);
-          return new Response(
-            JSON.stringify({ error: 'Internal Server Error' }),
-            {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            },
-          );
+          console.error('Wallet API Error:', error)
+          return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
         }
       },
     },
   },
-});
+})

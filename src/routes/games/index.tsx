@@ -1,8 +1,4 @@
-import Footer from '@/components/layout/footer/footer';
-import Header from '@/components/layout/header';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   CircleDot,
   CircleSlash2,
@@ -12,11 +8,15 @@ import {
   Spade,
   TrendingUp,
   Trophy,
-} from 'lucide-react';
+} from 'lucide-react'
+import Footer from '@/components/layout/footer/footer'
+import Header from '@/components/layout/header'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/games/')({
   component: RouteComponent,
-});
+})
 
 type GameId =
   | 'mines'
@@ -32,14 +32,14 @@ type GameId =
   | 'crash'
   | 'towers'
   | 'goal'
-  | 'diamonds';
+  | 'diamonds'
 
 interface Game {
-  id: GameId;
-  name: string;
-  description: string;
-  category: 'dice' | 'card' | 'wheel' | 'grid';
-  icon: React.ReactNode;
+  id: GameId
+  name: string
+  description: string
+  category: 'dice' | 'card' | 'wheel' | 'grid'
+  icon: React.ReactNode
 }
 
 function RouteComponent() {
@@ -146,14 +146,14 @@ function RouteComponent() {
       category: 'grid',
       icon: <Gem className="h-6 w-6" />,
     },
-  ];
+  ]
 
   const categories = [
     { id: 'dice' as const, name: 'Dice & Numbers', color: 'text-blue-500' },
     { id: 'card' as const, name: 'Card Games', color: 'text-red-500' },
     { id: 'wheel' as const, name: 'Wheel Games', color: 'text-yellow-500' },
     { id: 'grid' as const, name: 'Grid Games', color: 'text-green-500' },
-  ];
+  ]
   return (
     <div className="space-y-20">
       <Header />
@@ -164,38 +164,28 @@ function RouteComponent() {
             <h1 className="mb-3 text-5xl font-bold tracking-tight text-foreground md:text-6xl">
               Casino Games
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Choose your game and try your luck!
-            </p>
+            <p className="text-lg text-muted-foreground">Choose your game and try your luck!</p>
           </div>
 
           {/* Game Categories */}
           <div className="space-y-12">
             {categories.map((category) => {
-              const categoryGames = games.filter(
-                (g) => g.category === category.id,
-              );
+              const categoryGames = games.filter((g) => g.category === category.id)
 
               return (
                 <div key={category.id}>
-                  <h2 className={cn('mb-6 text-2xl font-bold', category.color)}>
-                    {category.name}
-                  </h2>
+                  <h2 className={cn('mb-6 text-2xl font-bold', category.color)}>{category.name}</h2>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {categoryGames.map((game) => (
-                      <Link to={`/games/${game.id}`} key={game.id}>
+                      <Link key={game.id} to={`/games/${game.id}`}>
                         <Card className="group cursor-pointer border-border/50 bg-card/50 p-6 backdrop-blur-sm transition-all hover:scale-105 hover:border-primary hover:bg-card hover:shadow-lg hover:shadow-primary/20">
                           <div className="mb-4 flex items-center gap-3">
                             <div className="rounded-lg bg-primary/20 p-3 text-primary transition-transform group-hover:scale-110">
                               {game.icon}
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-foreground">
-                                {game.name}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {game.description}
-                              </p>
+                              <h3 className="text-lg font-semibold text-foreground">{game.name}</h3>
+                              <p className="text-sm text-muted-foreground">{game.description}</p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -208,20 +198,17 @@ function RouteComponent() {
                     ))}
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
 
           {/* Footer Info */}
           <Card className="mt-12 border-border/50 bg-card/50 p-8 backdrop-blur-sm">
             <div className="text-center">
-              <h3 className="mb-3 text-xl font-semibold text-foreground">
-                Welcome to the Casino
-              </h3>
+              <h3 className="mb-3 text-xl font-semibold text-foreground">Welcome to the Casino</h3>
               <p className="text-muted-foreground">
-                All games start with a $1000 balance. Try different strategies
-                and see which games you enjoy the most. Remember to gamble
-                responsibly!
+                All games start with a $1000 balance. Try different strategies and see which games
+                you enjoy the most. Remember to gamble responsibly!
               </p>
             </div>
           </Card>
@@ -229,5 +216,5 @@ function RouteComponent() {
       </main>
       <Footer />
     </div>
-  );
+  )
 }

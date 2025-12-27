@@ -1,4 +1,4 @@
-import { useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,21 +9,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { signOut } from '@/lib/auth-client';
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { signOut } from '@/lib/auth-client'
 
 export function SignOut() {
-  const router = useRouter();
+  const router = useRouter()
   const handleSignOut = async () => {
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.navigate({ to: '/' });
+          router.navigate({ to: '/' })
         },
       },
-    });
-  };
+    })
+  }
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -32,19 +32,17 @@ export function SignOut() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will sign you out of your account.
-          </AlertDialogDescription>
+          <AlertDialogDescription>This will sign you out of your account.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction asChild>
-            <Button variant="destructive" onClick={handleSignOut} type="submit">
+            <Button onClick={handleSignOut} type="submit" variant="destructive">
               Sign Out
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }

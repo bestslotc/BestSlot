@@ -1,24 +1,24 @@
-import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { Check, Eye, EyeOff, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { resetPassword } from '@/lib/auth-client';
+import { useNavigate } from '@tanstack/react-router'
+import { Check, Eye, EyeOff, X } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { resetPassword } from '@/lib/auth-client'
 
 interface ResetPasswordFormProps {
-  token: string;
+  token: string
 }
 
 export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
-  const [isPending, setIsPending] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPending, setIsPending] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const passwordStrength = {
     length: password.length >= 6,
@@ -26,19 +26,18 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
     hasLower: /[a-z]/.test(password),
     hasNumber: /[0-9]/.test(password),
     hasSpecial: /[!@#$%^&*]/.test(password),
-  };
+  }
 
-  const strengthScore = Object.values(passwordStrength).filter(Boolean).length;
-  const isStrongPassword = strengthScore >= 3;
-  const passwordsMatch = password === confirmPassword && password.length > 0;
+  const strengthScore = Object.values(passwordStrength).filter(Boolean).length
+  const isStrongPassword = strengthScore >= 3
+  const passwordsMatch = password === confirmPassword && password.length > 0
 
   async function handleSubmit(evt: React.FormEvent<HTMLFormElement>) {
-    evt.preventDefault();
+    evt.preventDefault()
 
-    if (!password) return toast.error('Please enter your new password.');
-    if (!isStrongPassword) return toast.error('Password is too weak.');
-    if (password !== confirmPassword)
-      return toast.error('Passwords do not match.');
+    if (!password) return toast.error('Please enter your new password.')
+    if (!isStrongPassword) return toast.error('Password is too weak.')
+    if (password !== confirmPassword) return toast.error('Passwords do not match.')
 
     await resetPassword({
       newPassword: password,
@@ -47,15 +46,15 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
         onRequest: () => setIsPending(true),
         onResponse: () => setIsPending(false),
         onError: (ctx) => {
-          toast.error(ctx.error.message || 'Failed to reset password');
+          toast.error(ctx.error.message || 'Failed to reset password')
         },
         onSuccess: () => {
-          toast.success('Password reset successfully!');
+          toast.success('Password reset successfully!')
           // Type-safe navigation to sign-in
-          navigate({ to: '/auth/signin' });
+          navigate({ to: '/auth/signin' })
         },
       },
-    });
+    })
   }
 
   return (
@@ -64,47 +63,30 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
       <div className="space-y-3">
         <Label htmlFor="password font-medium">New Password</Label>
         <div className="relative">
-          {/** biome-ignore lint/correctness/useUniqueElementIds: this is fine */}
           <Input
-            type={showPassword ? 'text' : 'password'}
+            className="pr-10"
             id="password"
-            value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter a strong password"
-            className="pr-10"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
           />
           <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            onClick={() => setShowPassword(!showPassword)}
+            type="button"
           >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
 
         {password && (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <PasswordCheck
-                label="At least 6 characters"
-                isValid={passwordStrength.length}
-              />
-              <PasswordCheck
-                label="Uppercase letter"
-                isValid={passwordStrength.hasUpper}
-              />
-              <PasswordCheck
-                label="Lowercase letter"
-                isValid={passwordStrength.hasLower}
-              />
-              <PasswordCheck
-                label="Number"
-                isValid={passwordStrength.hasNumber}
-              />
+              <PasswordCheck isValid={passwordStrength.length} label="At least 6 characters" />
+              <PasswordCheck isValid={passwordStrength.hasUpper} label="Uppercase letter" />
+              <PasswordCheck isValid={passwordStrength.hasLower} label="Lowercase letter" />
+              <PasswordCheck isValid={passwordStrength.hasNumber} label="Number" />
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div
@@ -125,57 +107,44 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
       <div className="space-y-3">
         <Label htmlFor="confirmPassword font-medium">Confirm Password</Label>
         <div className="relative">
-          {/** biome-ignore lint/correctness/useUniqueElementIds: <this is fine */}
           <Input
-            type={showConfirmPassword ? 'text' : 'password'}
+            className="pr-10"
             id="confirmPassword"
-            value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Re-enter your password"
-            className="pr-10"
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
           />
           <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            type="button"
           >
-            {showConfirmPassword ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       <Button
-        type="submit"
-        disabled={isPending || !isStrongPassword || !passwordsMatch}
         className="w-full"
+        disabled={isPending || !isStrongPassword || !passwordsMatch}
         size="lg"
+        type="submit"
       >
         {isPending ? 'Resetting password...' : 'Reset Password'}
       </Button>
     </form>
-  );
-};
+  )
+}
 
 // Small helper component for the checklist
-const PasswordCheck = ({
-  label,
-  isValid,
-}: {
-  label: string;
-  isValid: boolean;
-}) => (
+const PasswordCheck = ({ label, isValid }: { label: string; isValid: boolean }) => (
   <div className="flex items-center gap-2">
     {isValid ? (
       <Check className="h-4 w-4 text-green-500" />
     ) : (
       <X className="h-4 w-4 text-destructive" />
     )}
-    <span className={isValid ? 'text-green-500' : 'text-destructive'}>
-      {label}
-    </span>
+    <span className={isValid ? 'text-green-500' : 'text-destructive'}>{label}</span>
   </div>
-);
+)

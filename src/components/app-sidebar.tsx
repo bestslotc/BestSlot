@@ -1,15 +1,3 @@
-import { NavMain } from '@/components/nav-main';
-import { NavSecondary } from '@/components/nav-secondary';
-import { NavUser } from '@/components/nav-user';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
 import {
   IconArrowDownCircle,
   IconArrowUpCircle,
@@ -23,15 +11,27 @@ import {
   IconMail,
   IconUserCog,
   IconUsersPlus,
-} from '@tabler/icons-react';
-import { Dices } from 'lucide-react';
+} from '@tabler/icons-react'
+import { Dices } from 'lucide-react'
+import { NavMain } from '@/components/nav-main'
+import { NavSecondary } from '@/components/nav-secondary'
+import { NavUser } from '@/components/nav-user'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar'
 
 interface User {
-  id?: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  role?: string | null;
+  id?: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+  role?: string | null
 }
 
 const data = {
@@ -127,14 +127,14 @@ const data = {
       role: ['ADMIN', 'USER'],
     },
   ],
-};
+}
 
 export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: User }) {
   // 1. Get the current user's role. Assume it's a string like 'ADMIN' or 'USER'.
-  const userRole = user?.role;
+  const userRole = user?.role
 
   // 2. Filter the navigation items based on the user's role.
   //    - If the item has NO 'role' property, it is included (optional safety fallback).
@@ -144,7 +144,7 @@ export function AppSidebar({
 
     // Check if the item has a 'role' array AND if the user's role is included in it
     if (item.role) {
-      return item.role.includes(userRole as 'ADMIN' | 'USER');
+      return item.role.includes(userRole as 'ADMIN' | 'USER')
     }
 
     // If 'role' is not defined for the item, you might choose to include it by default
@@ -153,25 +153,22 @@ export function AppSidebar({
     // return true;
 
     // Better: If the item has no role property, it's safer to require explicit roles.
-    return false; // Require explicit roles for all items
-  });
+    return false // Require explicit roles for all items
+  })
 
   const filteredNavSecondary = data.navSecondary.filter((item) => {
     if (item.role) {
-      return item.role.includes(userRole as 'ADMIN' | 'USER');
+      return item.role.includes(userRole as 'ADMIN' | 'USER')
     }
-    return false;
-  });
+    return false
+  })
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
+            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
               <a href="/">
                 <Dices className="size-5!" />
                 <h1 className="text-2xl font-bold tracking-tight md:text-2xl">
@@ -192,5 +189,5 @@ export function AppSidebar({
         <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

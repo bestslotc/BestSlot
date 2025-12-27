@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowRight, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowRight, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/auth/verify/pending')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
   return (
@@ -28,12 +28,10 @@ function RouteComponent() {
           <div className="bg-card rounded-2xl border border-border shadow-lg p-8 space-y-6">
             {/* Heading */}
             <div className="space-y-2 text-center">
-              <h1 className="text-3xl font-bold text-foreground">
-                Check your email
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground">Check your email</h1>
               <p className="text-base text-muted-foreground leading-relaxed">
-                We've sent a verification link to your email address. Please
-                click it to complete your account setup.
+                We've sent a verification link to your email address. Please click it to complete
+                your account setup.
               </p>
             </div>
 
@@ -42,15 +40,11 @@ function RouteComponent() {
               <div className="flex gap-4">
                 <div className="shrink-0">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <span className="text-sm font-semibold text-primary">
-                      1
-                    </span>
+                    <span className="text-sm font-semibold text-primary">1</span>
                   </div>
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">
-                    Check your inbox
-                  </p>
+                  <p className="font-medium text-foreground">Check your inbox</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Look for an email from our team
                   </p>
@@ -60,9 +54,7 @@ function RouteComponent() {
               <div className="flex gap-4">
                 <div className="shrink-0">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <span className="text-sm font-semibold text-primary">
-                      2
-                    </span>
+                    <span className="text-sm font-semibold text-primary">2</span>
                   </div>
                 </div>
                 <div>
@@ -76,9 +68,7 @@ function RouteComponent() {
               <div className="flex gap-4">
                 <div className="shrink-0">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <span className="text-sm font-semibold text-primary">
-                      3
-                    </span>
+                    <span className="text-sm font-semibold text-primary">3</span>
                   </div>
                 </div>
                 <div>
@@ -102,18 +92,15 @@ function RouteComponent() {
 
             {/* Action buttons */}
             <div className="space-y-3 flex w-full justify-between pt-2">
-              <Link to="/" className="block">
+              <Link className="block" to="/">
                 <Button className="w-full h-11 text-base font-medium">
                   Go to Home
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
 
-              <Link to="/auth/signin" className="block">
-                <Button
-                  variant="outline"
-                  className="w-full h-11 bg-transparent"
-                >
+              <Link className="block" to="/auth/signin">
+                <Button className="w-full h-11 bg-transparent" variant="outline">
                   Back to Sign In
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -126,8 +113,8 @@ function RouteComponent() {
             <p className="text-sm text-muted-foreground">
               Didn't receive it?{' '}
               <Link
-                to="/auth/verify"
                 className="text-primary hover:text-primary/80 font-medium transition-colors"
+                to="/auth/verify"
               >
                 Request a new link
               </Link>
@@ -136,5 +123,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }

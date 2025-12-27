@@ -1,11 +1,11 @@
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
-import { Button } from '@/components/ui/button';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronLeft, Lock } from 'lucide-react';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ChevronLeft, Lock } from 'lucide-react'
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: RouteComponent,
-});
+})
 
 function RouteComponent() {
   return (
@@ -19,17 +19,15 @@ function RouteComponent() {
             <div className="flex items-center gap-3">
               <Link to="/auth/signin">
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                  size="icon"
+                  variant="ghost"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Forgot Password?
-                </h1>
+                <h1 className="text-2xl font-bold text-foreground">Forgot Password?</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   No worries, we'll help you reset it
                 </p>
@@ -46,8 +44,7 @@ function RouteComponent() {
                     Secure password reset
                   </p>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    Enter your email and we'll send you a link to reset your
-                    password
+                    Enter your email and we'll send you a link to reset your password
                   </p>
                 </div>
               </div>
@@ -61,8 +58,8 @@ function RouteComponent() {
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
                 <Link
-                  to="/auth/signin"
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
+                  to="/auth/signin"
                 >
                   Sign in
                 </Link>
@@ -72,5 +69,5 @@ function RouteComponent() {
         </div>
       </div>
     </div>
-  );
+  )
 }
