@@ -23,6 +23,8 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
     playerBet,
     multiplier,
     cashedOut,
+    isPlacingBet,
+    isCashingOut,
   } = gameData;
   const { setBetAmount, setAutoCashout, placeBet, startRound, cashOut } =
     actions;
@@ -43,7 +45,10 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
               size='icon'
               onClick={() => setBetAmount(Math.max(1, betAmount - 10))}
               disabled={
-                playerBet !== null || gameState === 'running' || betAmount <= 10
+                isPlacingBet ||
+                playerBet !== null ||
+                gameState === 'running' ||
+                betAmount <= 10
               }
               className='shrink-0'
             >
@@ -55,7 +60,9 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
               onChange={(e) =>
                 setBetAmount(Math.max(1, Number(e.target.value)))
               }
-              disabled={playerBet !== null || gameState === 'running'}
+              disabled={
+                isPlacingBet || playerBet !== null || gameState === 'running'
+              }
               min={10}
               max={balance}
               className='text-center md:text-lg font-bold'
@@ -66,6 +73,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
               size='icon'
               onClick={() => setBetAmount(Math.min(balance, betAmount + 10))}
               disabled={
+                isPlacingBet ||
                 playerBet !== null ||
                 gameState === 'running' ||
                 betAmount > balance
@@ -84,6 +92,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
                 size='sm'
                 onClick={() => setBetAmount(amount)}
                 disabled={
+                  isPlacingBet ||
                   playerBet !== null ||
                   gameState === 'running' ||
                   amount > balance
@@ -100,7 +109,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
           {gameState === 'waiting' && !playerBet && (
             <Button
               onClick={placeBet}
-              disabled={betAmount < 1 || betAmount > balance}
+              disabled={isPlacingBet || betAmount < 1 || betAmount > balance}
               className='w-full h-full  font-black bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-xl shadow-blue-600/40 min-h-[100px] md:min-h-[120px]'
             >
               <div>
@@ -122,6 +131,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
           {gameState === 'running' && playerBet && !cashedOut && (
             <Button
               onClick={() => cashOut()}
+              disabled={isCashingOut}
               className='w-full h-full  font-black bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-xl shadow-amber-600/40 min-h-[100px] md:min-h-[120px] animate-pulse'
             >
               <div>
@@ -150,7 +160,9 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
         <Switch
           checked={autoCashout !== null}
           onCheckedChange={(checked) => setAutoCashout(checked ? 2.0 : null)}
-          disabled={playerBet !== null || gameState === 'running'}
+          disabled={
+            isPlacingBet || playerBet !== null || gameState === 'running'
+          }
         />
         <Input
           type='number'
@@ -163,6 +175,7 @@ export function CrashControls({ gameData, actions }: CrashControlsProps) {
           }
           placeholder='2.00x'
           disabled={
+            isPlacingBet ||
             playerBet !== null ||
             gameState === 'running' ||
             autoCashout === null

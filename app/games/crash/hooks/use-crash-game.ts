@@ -2,6 +2,10 @@
 
 import { type MotionValue, useMotionValue } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useBetPlacementMutation,
+  useCashoutMutation,
+} from '@/services/games/crash';
 import { generateCrashPoint } from '../lib/crash-logic';
 
 export type GameState = 'waiting' | 'running' | 'crashed';
@@ -17,6 +21,8 @@ export type CrashGameData = {
   cashedOut: boolean;
   showWinAnimation: boolean;
   planeProgress: MotionValue<number>;
+  isPlacingBet: boolean;
+  isCashingOut: boolean;
 };
 
 export type CrashGameActions = {
@@ -47,6 +53,24 @@ export const useCrashGame = (
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoCashedOutRef = useRef(false);
 
+  const { mutate: placeBetMutate, isPending: isPlacingBet } =
+    useBetPlacementMutation({
+      onSuccess: () => {
+        setBalance((prev) => prev - betAmount);
+        setPlayerBet(betAmount);
+        setCashedOut(false);
+        autoCashedOutRef.current = false;
+      },
+    });
+
+  const { mutate: cashoutMutate, isPending: isCashingOut } = useCashoutMutation(
+    {
+      onSuccess: () => {
+        // Optional: Handle any specific actions on successful cashout API call
+      },
+    },
+  );
+
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -55,11 +79,19 @@ export const useCrashGame = (
 
   const cashOut = useCallback(
     (currentMultiplier?: number) => {
-      if (!playerBet || cashedOut) return;
+      if (!playerBet || cashedOut || isCashingOut) return;
 
       const finalMultiplier = currentMultiplier || multiplier.get();
       const winnings = playerBet * finalMultiplier;
       setBalance((prev) => prev + winnings);
+
+      cashoutMutate({
+        gameName: 'crash',
+        betAmount: playerBet,
+        cashedOutMultiplier: finalMultiplier,
+        winnings: winnings,
+      });
+
       setCashedOut(true);
       setShowWinAnimation(true);
 
@@ -67,17 +99,33 @@ export const useCrashGame = (
 
       setPlayerBet(null);
     },
-    [playerBet, cashedOut, multiplier],
+    [playerBet, cashedOut, multiplier, cashoutMutate, isCashingOut],
   );
 
   const placeBet = useCallback(() => {
-    if (betAmount < 1 || betAmount > balance || gameState !== 'waiting') return;
+    if (
+      betAmount < 10 ||
+      betAmount > balance ||
+      gameState !== 'waiting' ||
+      isPlacingBet
+    )
+      return;
 
-    setBalance((prev) => prev - betAmount);
-    setPlayerBet(betAmount);
-    setCashedOut(false);
-    autoCashedOutRef.current = false;
-  }, [betAmount, balance, gameState]);
+    const payload = {
+      amount: betAmount,
+      gameName: 'crash',
+      userBalance: balance,
+      autoCashout: autoCashout,
+    };
+    placeBetMutate(payload);
+  }, [
+    betAmount,
+    balance,
+    gameState,
+    isPlacingBet,
+    placeBetMutate,
+    autoCashout,
+  ]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: this is fine
   const startRound = useCallback(() => {
@@ -144,6 +192,8 @@ export const useCrashGame = (
       cashedOut,
       showWinAnimation,
       planeProgress,
+      isPlacingBet,
+      isCashingOut,
     },
     {
       setBetAmount,

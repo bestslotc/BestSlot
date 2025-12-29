@@ -4,6 +4,7 @@ import { motion, useTransform } from 'framer-motion';
 import { useCallback, useRef } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { useUserBalance } from '@/services/user/wallet';
 import { CrashCanvas } from './components/crash-canvas';
 import { CrashControls } from './components/crash-controls';
 import { CrashDisplay } from './components/crash-display';
@@ -18,7 +19,7 @@ type Particle = {
   life: number;
 };
 
-export default function CrashGame() {
+function CrashGameContent({ balance }: { balance: number }) {
   const particlesRef = useRef<Particle[]>([]);
 
   const createExplosion = useCallback((x: number, y: number) => {
@@ -34,7 +35,7 @@ export default function CrashGame() {
       });
     }
   }, []);
-  const [gameData, actions] = useCrashGame(1000, createExplosion);
+  const [gameData, actions] = useCrashGame(balance, createExplosion);
 
   const { gameState, multiplier, planeProgress } = gameData;
 
@@ -72,6 +73,13 @@ export default function CrashGame() {
           <CrashControls gameData={gameData} actions={actions} />
         </CardContent>
       </Card>
+      {gameData.balance.toFixed(2)}
     </div>
   );
+}
+
+export default function CrashGame() {
+  const { isPending, data, isError } = useUserBalance();
+  if (isPending || isError) return null;
+  return <CrashGameContent balance={data.balance} />;
 }
