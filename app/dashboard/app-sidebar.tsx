@@ -8,13 +8,12 @@ import {
   IconDashboard,
   IconFileText,
   IconGift,
-  IconHelpCircle,
   IconListDetails,
   IconMail,
   IconUserCog,
   IconUsersPlus,
 } from '@tabler/icons-react';
-import { Dices } from 'lucide-react';
+import { Dices, HeadphonesIcon } from 'lucide-react';
 import { NavMain } from '@/app/dashboard/nav-main';
 import { NavSecondary } from '@/app/dashboard/nav-secondary';
 import { NavUser } from '@/app/dashboard/nav-user';
@@ -127,8 +126,8 @@ export const data: { navMain: NavItem[]; navSecondary: NavItem[] } = {
   navSecondary: [
     {
       title: 'Customer Support',
-      url: '/dashboard/customer-support',
-      icon: IconHelpCircle,
+      url: '/support',
+      icon: HeadphonesIcon,
       role: ['ADMIN', 'USER'],
     },
   ],

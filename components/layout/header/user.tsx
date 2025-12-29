@@ -1,13 +1,7 @@
 'use client';
 
 import { IconArrowDownCircle, IconUserPlus } from '@tabler/icons-react';
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Moon,
-  Sun,
-  UserCog,
-} from 'lucide-react';
+import { Headphones, LayoutDashboard, Moon, Sun, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -167,11 +161,11 @@ export default function UserDropDown() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
-              href='/dashboard/support'
+              href='/support'
               className='flex w-full cursor-pointer items-center justify-between'
             >
               <div className='flex items-center gap-2'>
-                <MessageSquare className='text-primary/70 mr-2 h-4 w-4' />
+                <Headphones className='text-primary/70 mr-2 h-4 w-4' />
                 Customer Support
               </div>
             </Link>

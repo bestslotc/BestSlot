@@ -17,7 +17,7 @@ export default async function Header({
 }: HeaderProps) {
   return (
     <header
-      className={`bg-background z-50 border-b shadow-sm w-full top-0 ${
+      className={`bg-background/80 backdrop-blur-md z-50 border-b shadow-sm w-full top-0 ${
         fixed ? 'fixed' : 'relative'
       }`}
     >
@@ -27,9 +27,9 @@ export default async function Header({
           <div className='flex items-center gap-2'>
             <MobileMenu />
             <Link href='/' className='flex items-baseline gap-1.5'>
-              <h1 className='text-2xl font-bold tracking-tight'>
+              <h1 className='text-2xl font-black tracking-tight uppercase italic'>
                 <span className='text-primary'>Best</span>
-                <span className='font-medium text-foreground'>Slot</span>
+                <span className=' text-foreground'>Slot</span>
               </h1>
             </Link>
           </div>

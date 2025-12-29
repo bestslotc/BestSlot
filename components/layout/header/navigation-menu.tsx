@@ -18,7 +18,6 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-
 import Link from 'next/link';
 import type React from 'react';
 import {
@@ -191,7 +190,7 @@ export function NavigationMenuSection() {
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href='/live' className='flex items-center gap-2'>
+            <Link href='/support' className='flex items-center gap-2'>
               <div className='flex items-center gap-2'>
                 <Headphones className='size-4' />
                 Support
