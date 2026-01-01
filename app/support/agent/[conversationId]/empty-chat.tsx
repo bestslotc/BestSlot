@@ -2,10 +2,10 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
+import { UserForConversationDisplay } from '@/hooks/use-conversations'; // Import the type
 
 interface EmptyChatProps {
-  // biome-ignore lint: error
-  otherUser: any;
+  otherUser: UserForConversationDisplay | undefined; // Use the correct type
 }
 
 export function EmptyChat({ otherUser }: EmptyChatProps) {
@@ -20,7 +20,7 @@ export function EmptyChat({ otherUser }: EmptyChatProps) {
         </Avatar>
       </div>
       <h3 className='text-foreground mb-2 text-lg font-semibold'>
-        Start a conversation with {otherUser?.name}
+        Start a conversation with {otherUser?.name || 'User'}
       </h3>
       <p className='text-muted-foreground text-sm'>
         Send a message to get the conversation started!

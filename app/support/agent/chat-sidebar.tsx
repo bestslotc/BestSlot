@@ -13,7 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -23,34 +22,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import {
+  type ConversationDisplay,
+  useConversations,
+} from '@/hooks/use-conversations'; // Import ConversationDisplay
 import { usePresenceStore } from '@/lib/store/presenceStore';
-import { cn } from '@/lib/utils';
-
-interface User {
-  id: string;
-  name: string | null;
-  username: string | null;
-  image: string | null;
-}
-
-interface MessageForPreview {
-  id: string;
-  senderId: string;
-  content: string;
-  createdAt: Date;
-}
-
-interface ConversationDisplay {
-  id: string;
-  user1Id: string;
-  user2Id: string;
-  user1: User;
-  user2: User;
-  lastMessageAt: Date;
-  messages: MessageForPreview[];
-}
-
-import { useConversations } from '@/hooks/use-conversations';
+import { cn, getInitials } from '@/lib/utils'; // getInitials is already imported here
 
 interface ChatSidebarProps {
   currentUserId: string;
@@ -64,7 +41,8 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
   const { conversations, error } = useConversations();
 
   const getRecipient = (conv: ConversationDisplay) => {
-    return conv.user1Id === currentUserId ? conv.user2 : conv.user1;
+    // For an admin, the recipient is always the user who started the conversation
+    return conv.user;
   };
 
   const formatTime = (date: Date) => {
@@ -79,14 +57,7 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // getInitials is already imported from '@/lib/utils', so remove local definition
 
   return (
     <Sidebar className='border-border/40 border-r'>
@@ -173,9 +144,8 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
                 <SidebarMenu>
                   {conversations.map((conv) => {
                     const recipient = getRecipient(conv);
-                    const lastMessage = conv.messages[0];
-                    const isUnread =
-                      lastMessage && lastMessage.senderId !== currentUserId;
+                    const lastMessage = conv.messages?.[0]; // Safely access lastMessage
+                    const isUnread = conv._count.messages.isRead > 0; // Use count for unread
                     const isActive = currentConversationId === conv.id;
 
                     return (
@@ -188,24 +158,16 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
                             state === 'collapsed' && 'justify-center',
                           )}
                         >
-                          <Link href={`/chat/${conv.id}`}>
+                          <Link href={`/support/agent/${conv.id}`}>
                             <div className='flex w-full min-w-0 items-center gap-3'>
                               <div className='relative shrink-0'>
                                 <Avatar className='border-background h-10 w-10 border-2 shadow-sm'>
                                   <AvatarImage
                                     src={recipient.image || undefined}
-                                    alt={
-                                      recipient.name ||
-                                      recipient.username ||
-                                      'User'
-                                    }
+                                    alt={recipient.name || 'User'}
                                   />
                                   <AvatarFallback>
-                                    {getInitials(
-                                      recipient.name ||
-                                        recipient.username ||
-                                        'U',
-                                    )}
+                                    {getInitials(recipient.name || 'U')}
                                   </AvatarFallback>
                                 </Avatar>
                                 {getUserById(recipient.id)?.status ===
@@ -218,14 +180,14 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
                                 <div className='min-w-0 flex-1'>
                                   <div className='mb-1 flex items-center justify-between'>
                                     <h3 className='text-foreground truncate font-medium'>
-                                      {recipient.name ||
-                                        recipient.username ||
-                                        'Unknown User'}
+                                      {recipient.name || 'Unknown User'}
                                     </h3>
 
                                     <div className='flex shrink-0 items-center gap-2'>
                                       <span className='text-muted-foreground text-xs'>
-                                        {formatTime(conv.lastMessageAt)}
+                                        {formatTime(
+                                          new Date(conv.lastMessageAt),
+                                        )}
                                       </span>
                                       {isUnread && (
                                         <Badge className='h-2 w-2 rounded-full bg-blue-500 p-0' />
@@ -259,32 +221,30 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className='border-border/40 bg-background/95 supports-backdrop-filter:bg-background/60 border-t backdrop-blur'>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className={cn(
-                'hover:bg-accent/50 h-auto p-3',
-                state === 'collapsed' && 'justify-center',
-              )}
-            >
-              <Users className='h-5 w-5' />
-              {state === 'expanded' && <span>Find People</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className={cn(
-                'hover:bg-accent/50 h-auto p-3',
-                state === 'collapsed' && 'justify-center',
-              )}
-            >
-              <Settings className='h-5 w-5' />
-              {state === 'expanded' && <span>Settings</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className={cn(
+              'hover:bg-accent/50 h-auto p-3',
+              state === 'collapsed' && 'justify-center',
+            )}
+          >
+            <Users className='h-5 w-5' />
+            {state === 'expanded' && <span>Find People</span>}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className={cn(
+              'hover:bg-accent/50 h-auto p-3',
+              state === 'collapsed' && 'justify-center',
+            )}
+          >
+            <Settings className='h-5 w-5' />
+            {state === 'expanded' && <span>Settings</span>}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </Sidebar>
   );
 }

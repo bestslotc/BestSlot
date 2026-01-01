@@ -1,17 +1,17 @@
+// hooks/use-conversations.ts
 'use client';
 
 import { useSession } from '@/lib/auth-client';
 import { usePresenceStore } from '@/lib/store/presenceStore';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Conversation } from '@prisma/client'; // Import Prisma's Conversation type
 
-// Assuming these types are defined somewhere, possibly from Prisma
-// For now, defining them here based on usage in the original hook.
-interface User {
+interface UserForConversationDisplay {
   id: string;
   name: string | null;
-  username: string | null;
   image: string | null;
+  // username is not in Prisma User model by default, only name and image
 }
 
 interface MessageForPreview {
@@ -21,15 +21,18 @@ interface MessageForPreview {
   createdAt: Date;
 }
 
-interface ConversationDisplay {
-  id: string;
-  user1Id: string;
-  user2Id: string;
-  user1: User;
-  user2: User;
-  lastMessageAt: Date;
-  messages: MessageForPreview[];
-}
+// Redefine ConversationDisplay to match the API response structure
+export type ConversationDisplay = Conversation & {
+  user: UserForConversationDisplay; // The user who initiated the conversation
+  assignedTo: UserForConversationDisplay | null; // The admin assigned
+  messages: MessageForPreview[]; // Will contain the last message due to API include
+  _count: {
+    messages: {
+      isRead: number; // Count of unread messages for this conversation
+    };
+  };
+};
+
 
 export function useConversations() {
   const { data: session, isPending: isSessionPending } = useSession();
@@ -51,7 +54,7 @@ export function useConversations() {
       if (!response.ok) {
         throw new Error('Failed to fetch conversations');
       }
-      const data = await response.json();
+      const data: ConversationDisplay[] = await response.json(); // Cast to new type
       setConversations(data);
     } catch (err: any) {
       setError(err.message);
@@ -74,26 +77,31 @@ export function useConversations() {
       return;
     }
 
-    // This subscription seems to be for an agent/admin to get real-time updates
-    // on all conversations. A user-specific channel is appropriate here.
     const channel = ably.channels.get(`user:${currentUserId}`);
 
     const handleNewMessage = (message: any) => {
-      const newConversation = message.data;
+      // The message data will contain the updated conversation
+      const updatedConversation: ConversationDisplay = message.data;
       setConversations((prev) => {
-        const existingConversation = prev.find(
-          (c) => c.id === newConversation.id,
+        const existingConversationIndex = prev.findIndex(
+          (c) => c.id === updatedConversation.id,
         );
-        if (existingConversation) {
-          return prev
-            .map((c) => (c.id === newConversation.id ? newConversation : c))
-            .sort(
-              (a, b) =>
-                new Date(b.lastMessageAt).getTime() -
-                new Date(a.lastMessageAt).getTime(),
-            );
+        if (existingConversationIndex > -1) {
+          // Update existing conversation and sort
+          const newConversations = [...prev];
+          newConversations[existingConversationIndex] = updatedConversation;
+          return newConversations.sort(
+            (a, b) =>
+              new Date(b.lastMessageAt).getTime() -
+              new Date(a.lastMessageAt).getTime(),
+          );
         }
-        return [newConversation, ...prev];
+        // Add new conversation and sort
+        return [updatedConversation, ...prev].sort(
+          (a, b) =>
+            new Date(b.lastMessageAt).getTime() -
+            new Date(a.lastMessageAt).getTime(),
+        );
       });
     };
 

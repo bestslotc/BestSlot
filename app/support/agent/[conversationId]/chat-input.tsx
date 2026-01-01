@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Session } from 'better-auth'; // Import Session type
 
 import { EmojiPicker } from './emoji-picker';
 
@@ -18,10 +19,7 @@ interface ChatInputProps {
   connectionState: string;
   // biome-ignore lint: error
   ably?: any;
-  // biome-ignore lint: error
-  getChannel?: any;
-  // biome-ignore lint: error
-  session?: any;
+  session?: Session; // Use imported Session type
 }
 
 export function ChatInput({
@@ -30,7 +28,6 @@ export function ChatInput({
   isConnected,
   connectionState,
   ably,
-  getChannel,
   session,
 }: ChatInputProps) {
   const [messageContent, setMessageContent] = useState('');
@@ -44,12 +41,12 @@ export function ChatInput({
 
   // Setup channel for typing events
   useEffect(() => {
-    if (!ably || !isConnected || !conversationId || !getChannel) {
+    if (!ably || !isConnected || !conversationId) { // Removed getChannel
       return;
     }
 
     const channelName = `chat:${conversationId}`;
-    const channel = getChannel(channelName);
+    const channel = ably.channels.get(channelName); // Used ably.channels.get directly
     channelRef.current = channel;
 
     return () => {
@@ -61,7 +58,7 @@ export function ChatInput({
         });
       }
     };
-  }, [ably, isConnected, conversationId, getChannel, session?.user?.id]);
+  }, [ably, isConnected, conversationId, session?.user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

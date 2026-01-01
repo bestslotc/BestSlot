@@ -7,10 +7,10 @@ import { format } from 'date-fns';
 import { AlertCircle, Check, CheckCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import { MessageWithSender } from '@/hooks/use-chat-messages'; // Import the type
 
 interface MessageBubbleProps {
-  // biome-ignore lint: error
-  message: any;
+  message: MessageWithSender; // Use the correct type
   isCurrentUser: boolean;
   onRetry: (messageId: string) => void;
 }

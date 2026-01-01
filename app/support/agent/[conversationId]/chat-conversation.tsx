@@ -1,15 +1,15 @@
 'use client';
 
 import { RefreshCw } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAbly } from '@/hooks/use-ably';
 import { useChatData } from '@/hooks/use-chat-data';
 import { useChatMessages } from '@/hooks/use-chat-messages';
+import { useSession } from '@/lib/auth-client';
+import { usePresenceStore } from '@/lib/store/presenceStore';
 
 import { ChatHeader } from './chat-header';
 import { ChatInput } from './chat-input';
@@ -21,38 +21,50 @@ export function ChatConversation() {
   const router = useRouter();
   const params = useParams();
   const conversationId = params.conversationId as string;
-  const { data: session, status } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession(); // Removed 'status' from destructuring
 
-  const { ably, isConnected, getChannel, connectionError, connectionState } =
-    useAbly(conversationId);
+  // Derived authentication status
+  const authStatus = isSessionPending
+    ? 'loading'
+    : session
+      ? 'authenticated'
+      : 'unauthenticated';
+
+  const { ably, isConnected, connectionError } = usePresenceStore();
 
   const {
     conversation,
     isLoading: isDataLoading,
     error: dataError,
     refetch: refetchData,
-  } = useChatData(conversationId, status);
+  } = useChatData(conversationId, authStatus); // Pass derived authStatus
 
   const {
     messages,
     isTyping,
     sendMessage,
     retryMessage,
-    isLoading: isMessagesLoading,
     error: messagesError,
-  } = useChatMessages(conversationId, session, ably, isConnected, getChannel);
+  } = useChatMessages({
+    conversationId,
+    session,
+    ably,
+    isConnected,
+    initialMessages: conversation?.messages || [],
+  });
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/signin');
+    if (!isSessionPending && authStatus === 'unauthenticated') {
+      // Use derived authStatus
+      router.push('/auth/signin');
     }
-  }, [status, router]);
+  }, [authStatus, isSessionPending, router]);
 
   const handleBackNavigation = () => {
-    router.push('/chat');
+    router.push('/support/agent');
   };
 
-  const isLoading = isDataLoading || isMessagesLoading;
+  const isLoading = isDataLoading || isSessionPending;
   const error = dataError || messagesError;
 
   if (isLoading) {
@@ -88,7 +100,8 @@ export function ChatConversation() {
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (authStatus === 'unauthenticated') {
+    // Use derived authStatus
     return null;
   }
 
@@ -98,7 +111,7 @@ export function ChatConversation() {
 
       <ConnectionStatus
         connectionError={connectionError}
-        connectionState={connectionState}
+        connectionState={ably?.connection?.state || 'disconnected'}
       />
 
       <ChatMessages
@@ -113,9 +126,8 @@ export function ChatConversation() {
         conversation={conversation}
         onSendMessage={sendMessage}
         isConnected={isConnected}
-        connectionState={connectionState}
+        connectionState={ably?.connection?.state || 'disconnected'}
         ably={ably}
-        getChannel={getChannel}
         session={session}
       />
     </div>

@@ -1,22 +1,22 @@
 'use client';
 
-import { format, isToday, isYesterday } from 'date-fns';
-import { useEffect, useRef } from 'react';
-
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { ConversationWithDetails } from '@/hooks/use-chat-data';
+import type { MessageWithSender } from '@/hooks/use-chat-messages';
+import type { UserForConversationDisplay } from '@/hooks/use-conversations'; // Import for EmptyChat and TypingIndicator
+import type { Session } from 'better-auth';
+import { format, isToday, isYesterday } from 'date-fns';
+import { useEffect, useRef } from 'react';
 
 import { EmptyChat } from './empty-chat';
 import { MessageBubble } from './message-bubble';
 import { TypingIndicator } from './typing-indicator';
 
 interface ChatMessagesProps {
-  // biome-ignore lint: error
-  messages: any[];
-  // biome-ignore lint: error
-  conversation: any;
-  // biome-ignore lint: error
-  session: any;
+  messages: MessageWithSender[];
+  conversation: ConversationWithDetails | null;
+  session: Session | null;
   isTyping: boolean;
   onRetryMessage: (messageId: string) => void;
 }
@@ -30,7 +30,6 @@ export function ChatMessages({
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint: error
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -45,12 +44,14 @@ export function ChatMessages({
     }
   };
 
+  const otherUser: UserForConversationDisplay | undefined = conversation?.user;
+
   return (
     <div className='flex-1 overflow-hidden'>
       <ScrollArea className='h-full'>
         <div className='space-y-6 p-6'>
           {messages.length === 0 ? (
-            <EmptyChat otherUser={conversation?.otherUser} />
+            <EmptyChat otherUser={otherUser} />
           ) : (
             messages.map((message, index) => {
               const isCurrentUser = message.senderId === session?.user?.id;
@@ -82,7 +83,7 @@ export function ChatMessages({
             })
           )}
 
-          {isTyping && <TypingIndicator otherUser={conversation?.otherUser} />}
+          {isTyping && otherUser && <TypingIndicator otherUser={otherUser} />}
 
           <div ref={messagesEndRef} />
         </div>

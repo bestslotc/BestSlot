@@ -2,10 +2,10 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
+import { UserForConversationDisplay } from '@/hooks/use-conversations'; // Import the type
 
 interface TypingIndicatorProps {
-  // biome-ignore lint: error
-  otherUser: any;
+  otherUser: UserForConversationDisplay | undefined; // Use the correct type
 }
 
 export function TypingIndicator({ otherUser }: TypingIndicatorProps) {

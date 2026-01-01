@@ -26,9 +26,29 @@ export async function GET() {
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             image: true,
           },
+        },
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        messages: {
+            take: 1,
+            orderBy: {
+                createdAt: 'desc'
+            },
+            select: {
+                id: true,
+                senderId: true,
+                content: true,
+                createdAt: true,
+            }
         },
         _count: {
           select: {
@@ -38,7 +58,12 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(conversations);
+    const transformedConversations = conversations.map(conv => ({
+        ...conv,
+        messages: conv.messages.length > 0 ? conv.messages : [],
+    }));
+
+    return NextResponse.json(transformedConversations);
   } catch (error) {
     console.error('FETCH_CONVERSATIONS_ERROR:', error);
     return NextResponse.json(
