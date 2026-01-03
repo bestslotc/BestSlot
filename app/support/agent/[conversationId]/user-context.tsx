@@ -1,4 +1,3 @@
-import { AlertCircle, Clock, Trophy, Wallet } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -7,13 +6,14 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle, Clock, Trophy, Wallet } from 'lucide-react';
 
 export function UserContext() {
   return (
     <Accordion
       type='multiple'
       defaultValue={['intelligence', 'financial', 'activity', 'flags']}
-      className='w-full'
+      className='w-full px-4'
     >
       <div className='space-y-2'>
         <AccordionItem value='intelligence'>
@@ -67,7 +67,7 @@ export function UserContext() {
             Recent Activity
           </AccordionTrigger>
           <AccordionContent className='space-y-3 pt-2'>
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div key={i} className='flex gap-3 text-xs'>
                 <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted'>
                   <Clock className='h-4 w-4 text-muted-foreground' />

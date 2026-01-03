@@ -148,10 +148,8 @@ export default function ChatConversation() {
         <div className='border-b border-border p-4'>
           <h2 className='text-lg font-semibold'>Customer Profile</h2>
         </div>
-        <ScrollArea className='flex-1'>
-          <div className='p-4'>
-            <UserContext />
-          </div>
+        <ScrollArea className='flex-1 h-[calc(100vh-96px)] '>
+          <UserContext />
         </ScrollArea>
       </div>
     </main>

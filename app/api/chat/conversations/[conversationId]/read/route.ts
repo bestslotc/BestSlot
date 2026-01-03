@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
 import { ably } from '@/lib/ably';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 export async function POST(
   req: Request,
-  { params }: { params: { conversationId: string } },
+  { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const conversationId = params.conversationId;
+    const { conversationId } = await params;
     const currentUserId = session.user.id;
 
     // Find messages to mark as read

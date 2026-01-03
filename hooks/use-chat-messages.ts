@@ -237,9 +237,9 @@ export function useChatMessages({
   return {
     messages,
     isTyping,
-    sendMessage: (content: string) => {
+    sendMessage: async (content: string) => {
       const optimisticId = window.crypto.randomUUID();
-      sendMessage(content, optimisticId);
+      await sendMessage(content, optimisticId);
     },
     retryMessage,
     isLoading,
