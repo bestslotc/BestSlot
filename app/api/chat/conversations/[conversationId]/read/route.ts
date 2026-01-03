@@ -3,6 +3,28 @@ import { ably } from '@/lib/ably';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Publishes the unread message count for a given user to their notification channel.
+ * @param userId The ID of the user to notify.
+ */
+async function publishUnreadCountForUser(userId: string) {
+  const unreadCount = await prisma.message.count({
+    where: {
+      isRead: false,
+      senderId: {
+        not: userId, // Message was not sent by the user
+      },
+      conversation: {
+        // Conversation is one the user is part of
+        OR: [{ userId: userId }, { assignedToId: userId }],
+      },
+    },
+  });
+
+  const notificationChannel = ably.channels.get(`notifications:${userId}`);
+  await notificationChannel.publish('unread-count', { count: unreadCount });
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ conversationId: string }> },
@@ -55,14 +77,16 @@ export async function POST(
       },
     });
 
-    // Publish event to Ably
-
+    // Publish event to Ably to update the chat UI
     const channel = ably.channels.get(`chat:${conversationId}`);
     await channel.publish('messages-read', {
       messageIds,
       conversationId,
       readBy: currentUserId,
     });
+
+    // Publish event to update the global unread count
+    await publishUnreadCountForUser(currentUserId);
 
     return NextResponse.json({ success: true, readMessageIds: messageIds });
   } catch (error) {

@@ -5,6 +5,28 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 /**
+ * Publishes the unread message count for a given user to their notification channel.
+ * @param userId The ID of the user to notify.
+ */
+async function publishUnreadCountForUser(userId: string) {
+  const unreadCount = await prisma.message.count({
+    where: {
+      isRead: false,
+      senderId: {
+        not: userId, // Message was not sent by the user
+      },
+      conversation: {
+        // Conversation is one the user is part of
+        OR: [{ userId: userId }, { assignedToId: userId }],
+      },
+    },
+  });
+
+  const notificationChannel = ably.channels.get(`notifications:${userId}`);
+  await notificationChannel.publish('unread-count', { count: unreadCount });
+}
+
+/**
  * POST /api/chat/conversations/[conversationId]/messages
  * Sends a new message in a conversation.
  */
@@ -16,8 +38,9 @@ export async function POST(
     const session = await auth.api.getSession({
       headers: await headers(),
     });
+    const sender = session?.user;
 
-    if (!session?.user?.id) {
+    if (!sender?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -34,7 +57,7 @@ export async function POST(
     // 1. Verify that the user is part of the conversation (or is an admin)
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { userId: true, status: true },
+      select: { userId: true, status: true, assignedToId: true },
     });
 
     if (!conversation) {
@@ -44,10 +67,7 @@ export async function POST(
       );
     }
 
-    if (
-      session.user.role !== 'ADMIN' &&
-      conversation.userId !== session.user.id
-    ) {
+    if (sender.role !== 'ADMIN' && conversation.userId !== sender.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -67,7 +87,7 @@ export async function POST(
         content,
         type,
         conversationId,
-        senderId: session.user.id,
+        senderId: sender.id,
       },
       include: {
         sender: {
@@ -90,6 +110,26 @@ export async function POST(
     // 4. Publish the message to the Ably channel, including optimisticId if present
     const channel = ably.channels.get(`chat:${conversationId}`);
     await channel.publish('new-message', { ...newMessage, optimisticId });
+
+    // 5. Publish unread count notification to the recipient(s)
+    if (sender.role === 'ADMIN') {
+      // Admin is sending, so notify the user who started the conversation
+      await publishUnreadCountForUser(conversation.userId);
+    } else {
+      // User is sending. Notify the assigned admin, or all admins if unassigned.
+      if (conversation.assignedToId) {
+        await publishUnreadCountForUser(conversation.assignedToId);
+      } else {
+        // No specific admin assigned, notify all active admins
+        const admins = await prisma.user.findMany({
+          where: { role: 'ADMIN', isActive: true },
+          select: { id: true },
+        });
+        for (const admin of admins) {
+          await publishUnreadCountForUser(admin.id);
+        }
+      }
+    }
 
     return NextResponse.json(newMessage);
   } catch (error) {

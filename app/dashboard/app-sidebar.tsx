@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useSession } from '@/lib/auth-client';
+import { useNotificationStore } from '@/lib/store/notification'; // Import the store
 
 // Define the structure for Nav Item to explicitly include 'role'
 // and make 'role' optional for items visible to all/default
@@ -135,6 +136,7 @@ export const data: { navMain: NavItem[]; navSecondary: NavItem[] } = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, isPending } = useSession();
+  const unreadCount = useNotificationStore((state) => state.unreadCount); // Get unread count
 
   // 1. Get the current user's role. Assume it's a string like 'ADMIN' or 'USER'.
   const userRole = session?.user?.role;
@@ -212,7 +214,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {/* Pass the FILTERED array */}
         <NavMain items={filteredNavMain} />
-        <NavSecondary items={filteredNavSecondary} className='mt-auto' />
+        <NavSecondary
+          items={filteredNavSecondary}
+          unreadCount={unreadCount}
+          className='mt-auto'
+        />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
