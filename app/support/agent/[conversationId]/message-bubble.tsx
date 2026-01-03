@@ -32,7 +32,7 @@ export function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
       case 'delivered':
         return <CheckCheck className='h-3 w-3' />;
       case 'read':
-        return <CheckCheck className='h-3 w-3 text-green-500' />;
+        return <CheckCheck className='h-3 w-3 text-blue-500' />;
       case 'failed':
         return <AlertCircle className='text-destructive h-3 w-3' />;
       default:
@@ -69,7 +69,7 @@ export function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
     if (!isCurrentUser) return null;
     return (
       <div className='flex items-center gap-1'>
-        {getMessageStatusIcon(message.content)}
+        {getMessageStatusIcon(message.status)}
       </div>
     );
   };

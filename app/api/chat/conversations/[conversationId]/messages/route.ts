@@ -22,7 +22,7 @@ export async function POST(
     }
 
     const { conversationId } = await params;
-    const { content, type = 'TEXT' } = await req.json();
+    const { content, type = 'TEXT', optimisticId } = await req.json();
 
     if (!content) {
       return NextResponse.json(
@@ -87,9 +87,9 @@ export async function POST(
       data: { lastMessageAt: new Date() },
     });
 
-    // 4. Publish the message to the Ably channel
+    // 4. Publish the message to the Ably channel, including optimisticId if present
     const channel = ably.channels.get(`chat:${conversationId}`);
-    await channel.publish('new-message', newMessage);
+    await channel.publish('new-message', { ...newMessage, optimisticId });
 
     return NextResponse.json(newMessage);
   } catch (error) {

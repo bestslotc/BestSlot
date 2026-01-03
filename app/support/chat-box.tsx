@@ -47,7 +47,7 @@ const SUPPORT_INFO = {
   hours: 'Mon-Sun, 24/7',
 };
 
-type MessageStatus = 'sending' | 'sent' | 'delivered' | 'failed';
+type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 type MessageWithSender = Message & {
   sender: {
@@ -73,12 +73,13 @@ export function ChatBox() {
   const [error, setError] = React.useState<string | null>(null);
 
   const scrollAnchorRef = React.useRef<HTMLDivElement>(null);
+  const currentSessionId = session?.user?.id;
 
   const scrollToBottom = () => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
+  // biome-ignore lint/correctness/useExhaustiveDependencies: this is fine
   React.useEffect(() => {
     if (isOpen) {
       scrollToBottom();
@@ -86,7 +87,7 @@ export function ChatBox() {
   }, [messages, isOpen]);
 
   const initConversation = React.useCallback(async () => {
-    if (!isOpen || !session) return;
+    if (!isOpen || !session || conversation) return;
     setLoading(true);
     setError(null);
     try {
@@ -99,72 +100,106 @@ export function ChatBox() {
       if (!messagesRes.ok) throw new Error('Failed to fetch messages.');
       const fullConvData: Conversation & { messages: MessageWithSender[] } =
         await messagesRes.json();
+
       setMessages(
         fullConvData.messages.map((m) => ({
           ...m,
-          status: 'delivered' as MessageStatus,
+          status:
+            m.senderId === currentSessionId
+              ? m.isRead
+                ? 'read'
+                : 'delivered'
+              : 'delivered',
         })),
       );
-      // biome-ignore lint/suspicious/noExplicitAny: ignore
+      // biome-ignore lint/suspicious/noExplicitAny: this is fine
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [isOpen, session]);
+  }, [isOpen, session, conversation, currentSessionId]);
 
   React.useEffect(() => {
-    if (!isSessionPending) {
+    if (isOpen && !isSessionPending) {
       initConversation();
     }
-  }, [initConversation, isSessionPending]);
+  }, [initConversation, isOpen, isSessionPending]);
 
   React.useEffect(() => {
-    if (!ably || !conversation?.id) return;
+    if (!ably || !conversation?.id || !currentSessionId) return;
 
     const channel = ably.channels.get(`chat:${conversation.id}`);
 
     const handleNewMessage = (message: Ably.Message) => {
-      const newMessage = message.data as MessageWithSender;
-
+      const incomingMessage = message.data as MessageWithSender & {
+        optimisticId?: string;
+      };
       setMessages((prev) => {
-        // Check if this is an optimistic message that needs to be replaced
-        const optimisticIndex = prev.findIndex(
-          (m) =>
-            m.isOptimistic &&
-            m.content === newMessage.content &&
-            m.senderId === newMessage.senderId,
-        );
-
-        if (optimisticIndex !== -1) {
-          // Replace optimistic message with real one
-          const updated = [...prev];
-          updated[optimisticIndex] = { ...newMessage, status: 'delivered' };
-          return updated;
+        if (
+          incomingMessage.senderId === currentSessionId &&
+          incomingMessage.optimisticId
+        ) {
+          const optimisticIndex = prev.findIndex(
+            (m) => m.id === `temp-${incomingMessage.optimisticId}`,
+          );
+          if (optimisticIndex !== -1) {
+            const updated = [...prev];
+            updated[optimisticIndex] = {
+              ...incomingMessage,
+              status: 'delivered',
+              isOptimistic: false,
+            };
+            return updated;
+          }
         }
-
-        // Check if message already exists (by ID)
-        const exists = prev.some((m) => m.id === newMessage.id);
-        if (exists) return prev;
-
-        // Add new message
-        return [...prev, { ...newMessage, status: 'delivered' }];
+        if (prev.some((m) => m.id === incomingMessage.id)) return prev;
+        return [...prev, { ...incomingMessage, status: 'delivered' }];
       });
     };
 
+    const handleMessagesRead = (message: Ably.Message) => {
+      const { messageIds } = message.data as { messageIds: string[] };
+      setMessages((prev) =>
+        prev.map((m) =>
+          messageIds.includes(m.id)
+            ? { ...m, isRead: true, status: 'read' }
+            : m,
+        ),
+      );
+    };
+
     channel.subscribe('new-message', handleNewMessage);
+    channel.subscribe('messages-read', handleMessagesRead);
 
     return () => {
-      channel.unsubscribe('new-message', handleNewMessage);
+      channel.unsubscribe();
     };
-  }, [ably, conversation?.id]);
+  }, [ably, conversation?.id, currentSessionId]);
+
+  React.useEffect(() => {
+    if (messages.some((m) => !m.isRead && m.senderId !== currentSessionId)) {
+      const markAsRead = async () => {
+        if (!conversation?.id) return;
+        try {
+          await fetch(`/api/chat/conversations/${conversation.id}/read`, {
+            method: 'POST',
+          });
+        } catch (err) {
+          console.error('Failed to mark messages as read.', err);
+        }
+      };
+      const timeoutId = setTimeout(markAsRead, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages, conversation?.id, currentSessionId]);
 
   const handleSend = async () => {
     if (!input.trim() || !conversation?.id || !session?.user) return;
 
-    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticId = window.crypto.randomUUID();
     const optimisticMessage: MessageWithSender = {
-      id: tempId,
+      id: `temp-${optimisticId}`,
       content: input,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -195,23 +230,24 @@ export function ChatBox() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: optimisticMessage.content }),
+          body: JSON.stringify({
+            content: optimisticMessage.content,
+            optimisticId,
+          }),
         },
       );
 
       if (!response.ok) throw new Error('Failed to send message');
 
-      // Update status to sent (will be replaced by Ably message with 'delivered' status)
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === tempId ? { ...m, status: 'sent' as MessageStatus } : m,
+          m.id === `temp-${optimisticId}` ? { ...m, status: 'sent' } : m,
         ),
       );
     } catch (_e) {
-      // Mark message as failed
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === tempId ? { ...m, status: 'failed' as MessageStatus } : m,
+          m.id === `temp-${optimisticId}` ? { ...m, status: 'failed' } : m,
         ),
       );
       setError('Failed to send message.');
@@ -221,10 +257,9 @@ export function ChatBox() {
   const handleRetry = (messageId: string) => {
     const failedMessage = messages.find((m) => m.id === messageId);
     if (!failedMessage) return;
-
-    // Remove failed message and resend
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
     setInput(failedMessage.content);
+    // The user can press send again
   };
 
   const handleQuickAction = (action: string) => {
@@ -247,6 +282,8 @@ export function ChatBox() {
       case 'sent':
         return <Check className='h-3 w-3 text-muted-foreground/60' />;
       case 'delivered':
+        return <CheckCheck className='h-3 w-3 text-muted-foreground/80' />;
+      case 'read':
         return <CheckCheck className='h-3 w-3 text-blue-500' />;
       case 'failed':
         return <XCircle className='h-3 w-3 text-destructive' />;

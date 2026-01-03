@@ -3,6 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { useSession } from '@/lib/auth-client';
 import type { Message } from '@/lib/generated/prisma/client';
 
+export type MessageStatus =
+  | 'sending'
+  | 'sent'
+  | 'delivered'
+  | 'read'
+  | 'failed';
+
 // Define the extended message type
 export type MessageWithSender = Message & {
   sender: {
@@ -11,6 +18,8 @@ export type MessageWithSender = Message & {
     image: string | null;
     role: string;
   };
+  status?: MessageStatus;
+  isOptimistic?: boolean;
 };
 
 // Infer the session type from the useSession hook
@@ -31,89 +40,136 @@ export function useChatMessages({
   isConnected,
   initialMessages,
 }: UseChatMessagesProps) {
-  const [messages, setMessages] =
-    useState<MessageWithSender[]>(initialMessages);
+  const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentSessionId = session?.user?.id;
 
-  // 1. Sync initial messages safely.
-  // We use the length and the ID of the last message as a heuristic to avoid
-  // infinite loops caused by referential instability of the initialMessages array.
-  const syncKey = `${initialMessages.length}-${initialMessages[initialMessages.length - 1]?.id}`;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: syncKey is derived from initialMessages
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [syncKey]);
+  // Create a stable key based on the initial messages to prevent re-renders
+  const syncKey = `${initialMessages.length}-${
+    initialMessages[initialMessages.length - 1]?.id
+  }`;
 
-  // 2. Ably Subscription Effect
+  // 1. Sync and process initial messages
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syncKey is derived and stable
   useEffect(() => {
-    if (!ably || !isConnected || !conversationId) return;
+    if (currentSessionId) {
+      const processedMessages = initialMessages.map((msg) => ({
+        ...msg,
+        status:
+          msg.senderId === currentSessionId
+            ? msg.isRead
+              ? 'read'
+              : 'delivered'
+            : ('delivered' as MessageStatus),
+      }));
+      setMessages(processedMessages);
+    }
+  }, [syncKey, currentSessionId]);
+
+  // 2. Mark messages as read when new ones arrive
+  useEffect(() => {
+    const unreadMessages = messages.some(
+      (m) => !m.isRead && m.senderId !== currentSessionId,
+    );
+    if (unreadMessages) {
+      const markAsRead = async () => {
+        try {
+          await fetch(`/api/chat/conversations/${conversationId}/read`, {
+            method: 'POST',
+          });
+        } catch (err) {
+          console.error('Failed to mark messages as read.', err);
+        }
+      };
+      const timeoutId = setTimeout(markAsRead, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages, conversationId, currentSessionId]);
+
+  // 3. Ably Subscription Effect
+  useEffect(() => {
+    if (!ably || !isConnected || !conversationId || !currentSessionId) return;
 
     const channel = ably.channels.get(`chat:${conversationId}`);
 
     const handleNewMessage = (message: Ably.Message) => {
-      const incomingMessage = message.data as MessageWithSender;
+      const incomingMessage = message.data as MessageWithSender & {
+        optimisticId?: string;
+      };
 
-      // Use functional update to access current state without adding 'messages' to dependencies
       setMessages((prev) => {
-        const exists = prev.some((m) => m.id === incomingMessage.id);
-        if (exists) return prev;
-        return [...prev, incomingMessage];
+        if (
+          incomingMessage.senderId === currentSessionId &&
+          incomingMessage.optimisticId
+        ) {
+          const optimisticIndex = prev.findIndex(
+            (m) => m.id === `temp-${incomingMessage.optimisticId}`,
+          );
+          if (optimisticIndex !== -1) {
+            const updated = [...prev];
+            updated[optimisticIndex] = {
+              ...incomingMessage,
+              status: 'delivered',
+              isOptimistic: false,
+            };
+            return updated;
+          }
+        }
+
+        if (prev.some((m) => m.id === incomingMessage.id)) return prev;
+        return [...prev, { ...incomingMessage, status: 'delivered' }];
       });
+    };
+
+    const handleMessagesRead = (message: Ably.Message) => {
+      const { messageIds } = message.data as { messageIds: string[] };
+      setMessages((prev) =>
+        prev.map((m) =>
+          messageIds.includes(m.id)
+            ? { ...m, isRead: true, status: 'read' }
+            : m,
+        ),
+      );
     };
 
     const handleTyping = (message: Ably.Message) => {
       const { userId, isTyping: typingStatus } = message.data;
-
-      // Ignore our own typing events
-      if (userId === session?.user?.id) return;
-
+      if (userId === currentSessionId) return;
       setIsTyping(typingStatus);
 
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      // Auto-clear typing indicator if the user stops sending events
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (typingStatus) {
-        typingTimeoutRef.current = setTimeout(() => {
-          setIsTyping(false);
-        }, 3000);
+        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
       }
     };
 
     channel.subscribe('new-message', handleNewMessage);
+    channel.subscribe('messages-read', handleMessagesRead);
     channel.subscribe('typing', handleTyping);
 
     return () => {
-      channel.unsubscribe('new-message', handleNewMessage);
-      channel.unsubscribe('typing', handleTyping);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      channel.unsubscribe();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-    // messages is removed from here to prevent re-subscribing on every single message
-  }, [ably, isConnected, conversationId, session?.user?.id]);
+  }, [ably, isConnected, conversationId, currentSessionId]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || !conversationId || !session?.user) {
-        return;
-      }
+    async (content: string, optimisticId: string) => {
+      if (!content.trim() || !conversationId || !session?.user) return;
 
       setIsLoading(true);
       setError(null);
 
-      const optimisticId = window.crypto.randomUUID();
       const optimisticMessage: MessageWithSender = {
-        id: optimisticId,
-        content: content,
+        id: `temp-${optimisticId}`,
+        content,
         createdAt: new Date(),
         updatedAt: new Date(),
-        conversationId: conversationId,
+        conversationId,
         senderId: session.user.id,
         isRead: false,
         readAt: null,
@@ -127,9 +183,10 @@ export function useChatMessages({
           image: session.user.image ?? null,
           role: 'ADMIN',
         },
+        status: 'sending',
+        isOptimistic: true,
       };
 
-      // Apply optimistic update
       setMessages((prev) => [...prev, optimisticMessage]);
 
       try {
@@ -138,15 +195,24 @@ export function useChatMessages({
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, optimisticId }),
           },
         );
 
         if (!response.ok) throw new Error('Failed to send');
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === `temp-${optimisticId}` ? { ...m, status: 'sent' } : m,
+          ),
+        );
       } catch (_e) {
         setError('Failed to send message.');
-        // Remove the optimistic message on failure
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === `temp-${optimisticId}` ? { ...m, status: 'failed' } : m,
+          ),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -154,15 +220,27 @@ export function useChatMessages({
     [conversationId, session?.user],
   );
 
-  const retryMessage = useCallback(async (messageId: string) => {
-    // Logic for retrying would go here
-    console.log(`Retrying message ${messageId}`);
-  }, []);
+  const retryMessage = useCallback(
+    async (messageId: string) => {
+      const failedMessage = messages.find((m) => m.id === messageId);
+      if (failedMessage?.content) {
+        const newOptimisticId = messageId.startsWith('temp-')
+          ? messageId.substring(5)
+          : window.crypto.randomUUID();
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+        await sendMessage(failedMessage.content, newOptimisticId);
+      }
+    },
+    [messages, sendMessage],
+  );
 
   return {
     messages,
     isTyping,
-    sendMessage,
+    sendMessage: (content: string) => {
+      const optimisticId = window.crypto.randomUUID();
+      sendMessage(content, optimisticId);
+    },
     retryMessage,
     isLoading,
     error,
