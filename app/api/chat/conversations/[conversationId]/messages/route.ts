@@ -45,11 +45,18 @@ export async function POST(
     }
 
     const { conversationId } = await params;
-    const { content, type = 'TEXT', optimisticId } = await req.json();
+    const { content, type = 'TEXT', fileUrl, optimisticId } = await req.json();
 
-    if (!content) {
+    if (!content && type === 'TEXT') {
       return NextResponse.json(
-        { error: 'Message content is required' },
+        { error: 'Message content is required for text messages' },
+        { status: 400 },
+      );
+    }
+
+    if (!fileUrl && type === 'IMAGE') {
+      return NextResponse.json(
+        { error: 'File URL is required for image messages' },
         { status: 400 },
       );
     }
@@ -86,6 +93,7 @@ export async function POST(
       data: {
         content,
         type,
+        fileUrl,
         conversationId,
         senderId: sender.id,
       },

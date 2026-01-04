@@ -1,6 +1,7 @@
 import type Ably from 'ably';
 import { Mic, Paperclip, Send } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { sendImageAction } from '@/actions/send-image-action';
 import { EmojiPicker } from '@/components/chat/emoji-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,11 @@ type SessionData = ReturnType<typeof useSession>['data'];
 
 interface ChatInputProps {
   conversation: ConversationWithDetails | null;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (
+    content: string,
+    type?: 'TEXT' | 'IMAGE',
+    fileUrl?: string,
+  ) => Promise<void>;
   isConnected: boolean;
   connectionState: string;
   ably: Ably.Realtime | undefined | null;
@@ -33,6 +38,7 @@ export function ChatInput({
   const [isRecording, setIsRecording] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<Ably.RealtimeChannel | null>(null);
   const conversationId = conversation?.id;
@@ -116,7 +122,25 @@ export function ChatInput({
       typingTimeoutRef.current = null;
     }
 
-    await onSendMessage(content);
+    await onSendMessage(content, 'TEXT');
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const { secure_url } = await sendImageAction(formData);
+      await onSendMessage('', 'IMAGE', secure_url);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      // Optionally, show an error to the user
+    }
   };
 
   const handleEmojiSelect = (emoji: { native: string }) => {
@@ -163,11 +187,19 @@ export function ChatInput({
     <div className='border-border/40 bg-background/95 supports-backdrop-filter:bg-background/60 flex-none border-t backdrop-blur'>
       <div className='p-4'>
         <form onSubmit={handleSubmit} className='flex items-center gap-3'>
+          <input
+            type='file'
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className='hidden'
+            accept='image/*'
+          />
           <Button
             variant='ghost'
             size='sm'
             type='button'
             className='hover:bg-accent rounded-full p-2'
+            onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className='text-muted-foreground h-5 w-5' />
           </Button>

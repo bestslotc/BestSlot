@@ -94,11 +94,22 @@ export function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
             isCurrentUser
               ? 'rounded-br-none bg-slate-950 text-white dark:bg-black'
               : 'bg-background/80 dark:bg-secondary text-foreground rounded-bl-none border border-border/50',
+            message.type === 'IMAGE' && 'p-0 overflow-hidden',
           )}
         >
-          <p className='text-sm leading-relaxed wrap-break-word whitespace-pre-wrap'>
-            {message.content}
-          </p>
+          {message.type === 'IMAGE' && message.fileUrl ? (
+            <Image
+              src={message.fileUrl}
+              alt='sent image'
+              width={300}
+              height={300}
+              className='object-cover'
+            />
+          ) : (
+            <p className='text-sm leading-relaxed wrap-break-word whitespace-pre-wrap'>
+              {message.content}
+            </p>
+          )}
           <div className='text-muted-foreground dark:text-accent-foreground mt-1 flex items-center justify-end gap-2'>
             <span className='text-xs opacity-70'>
               {formatMessageTime(message.createdAt)}

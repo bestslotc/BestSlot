@@ -157,8 +157,14 @@ export function useChatMessages({
   }, [ably, isConnected, conversationId, currentSessionId]);
 
   const sendMessage = useCallback(
-    async (content: string, optimisticId: string) => {
-      if (!content.trim() || !conversationId || !session?.user) return;
+    async (
+      content: string,
+      optimisticId: string,
+      type: 'TEXT' | 'IMAGE' = 'TEXT',
+      fileUrl?: string,
+    ) => {
+      if (!content.trim() && type === 'TEXT') return;
+      if (!conversationId || !session?.user) return;
 
       setIsLoading(true);
       setError(null);
@@ -172,8 +178,8 @@ export function useChatMessages({
         senderId: session.user.id,
         isRead: false,
         readAt: null,
-        type: 'TEXT',
-        fileUrl: null,
+        type,
+        fileUrl: fileUrl || null,
         fileName: null,
         fileSize: null,
         sender: {
@@ -194,7 +200,7 @@ export function useChatMessages({
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, optimisticId }),
+            body: JSON.stringify({ content, optimisticId, type, fileUrl }),
           },
         );
 
@@ -227,7 +233,12 @@ export function useChatMessages({
           ? messageId.substring(5)
           : window.crypto.randomUUID();
         setMessages((prev) => prev.filter((m) => m.id !== messageId));
-        await sendMessage(failedMessage.content, newOptimisticId);
+        await sendMessage(
+          failedMessage.content,
+          newOptimisticId,
+          failedMessage.type,
+          failedMessage.fileUrl || undefined,
+        );
       }
     },
     [messages, sendMessage],
@@ -236,9 +247,13 @@ export function useChatMessages({
   return {
     messages,
     isTyping,
-    sendMessage: async (content: string) => {
+    sendMessage: async (
+      content: string,
+      type: 'TEXT' | 'IMAGE' = 'TEXT',
+      fileUrl?: string,
+    ) => {
       const optimisticId = window.crypto.randomUUID();
-      await sendMessage(content, optimisticId);
+      await sendMessage(content, optimisticId, type, fileUrl);
     },
     retryMessage,
     isLoading,
