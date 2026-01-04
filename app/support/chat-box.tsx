@@ -17,10 +17,10 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import Image from 'next/image';
 import * as React from 'react';
 import { sendImageAction } from '@/actions/send-image-action';
 import { EmojiPicker } from '@/components/chat/emoji-picker'; // Added import for EmojiPicker
+import { ImageViewer } from '@/components/chat/image-viewer';
 import { TypingIndicator } from '@/components/chat/typing-indicator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -591,12 +591,10 @@ export function ChatBox() {
               )}
             >
               {m.type === 'IMAGE' && m.fileUrl ? (
-                <Image
+                <ImageViewer
                   src={m.fileUrl}
                   alt='sent image'
-                  width={300}
-                  height={300}
-                  className='object-cover'
+                  className='rounded-lg'
                 />
               ) : (
                 m.content

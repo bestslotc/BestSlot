@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { AlertCircle, Check, CheckCheck, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import { ImageViewer } from '@/components/chat/image-viewer';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ContextMenu,
@@ -101,12 +102,10 @@ export function MessageBubble({
               )}
             >
               {message.type === 'IMAGE' && message.fileUrl ? (
-                <Image
+                <ImageViewer
                   src={message.fileUrl}
-                  alt='sent'
-                  width={300}
-                  height={300}
-                  className='object-cover rounded-lg'
+                  alt='sent image'
+                  className='rounded-lg'
                 />
               ) : (
                 <p className='text-sm leading-relaxed wrap-break-word whitespace-pre-wrap'>
