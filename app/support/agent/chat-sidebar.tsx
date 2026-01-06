@@ -60,7 +60,7 @@ export function ChatSidebar({ currentUserId }: ChatSidebarProps) {
   // getInitials is already imported from '@/lib/utils', so remove local definition
 
   return (
-    <Sidebar className='border-border/40 border-r'>
+    <Sidebar className='border-border/40 border-r w-80'>
       <SidebarHeader className='border-border/40 bg-background/95 supports-backdrop-filter:bg-background/60 border-b backdrop-blur'>
         <div className='flex items-center justify-between px-4 py-3'>
           <div className='flex items-center gap-2'>

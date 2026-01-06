@@ -24,12 +24,12 @@ export default async function ChatLayout({
     <SidebarProvider defaultOpen={true}>
       <div className='bg-background flex h-screen w-full'>
         {/* Desktop Sidebar - Hidden on mobile */}
-        <div className='hidden lg:block'>
+        <div className='hidden lg:block lg:w-80'>
           <ChatSidebar currentUserId={currentUserId} />
         </div>
 
         {/* Main Content Area */}
-        <SidebarInset className='flex-1 lg:flex-1'>{children}</SidebarInset>
+        <SidebarInset>{children}</SidebarInset>
       </div>
     </SidebarProvider>
   );

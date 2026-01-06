@@ -1,18 +1,21 @@
+'use client';
+import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { ChevronLeft, MessageCircle, Search } from 'lucide-react';
-import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { formatTime, getInitials, getPriorityColor } from '@/lib/utils';
+import { useConversations } from '@/hooks/use-conversations';
+import { useSession } from '@/lib/auth-client';
+import { usePresenceStore } from '@/lib/store/presenceStore';
+import { getInitials, getPriorityColor } from '@/lib/utils';
 
 interface User {
   id: string;
-  name: string;
+  name: string | null;
   image: string | null;
 }
 
@@ -35,13 +38,14 @@ interface ConversationDisplay {
   messages: MessageForPreview[];
 }
 
-export default async function ChatIndexPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+export default function ChatIndexPage() {
+  const { data: session, isPending } = useSession();
+  const { conversations, error } = useConversations();
+  const { getUserById } = usePresenceStore();
 
   if (
     !session ||
+    isPending ||
     !session.user ||
     !session.user.id ||
     !session.user.role ||
@@ -51,51 +55,21 @@ export default async function ChatIndexPage() {
   }
 
   const currentUserId = session.user.id;
-
-  let conversations: ConversationDisplay[] = [];
-  let error: string | null = null;
-
-  try {
-    conversations = (await prisma.conversation.findMany({
-      where: {
-        // Show all open and in-progress conversations
-        status: {
-          in: ['OPEN', 'IN_PROGRESS'],
-        },
-        // Alternative filters you can use:
-        // Show only conversations assigned to current admin:
-        // assignedToId: currentUserId,
-
-        // Show only unassigned conversations:
-        // assignedToId: null,
-
-        // Show all conversations (remove status filter):
-        // (no where clause needed)
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, image: true },
-        },
-        assignedTo: {
-          select: { id: true, name: true, image: true },
-        },
-        messages: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          select: { id: true, senderId: true, content: true, createdAt: true },
-        },
-      },
-      orderBy: {
-        lastMessageAt: 'desc',
-      },
-    })) as ConversationDisplay[];
-    // biome-ignore lint: error
-  } catch (err) {
-    error = 'Failed to fetch conversations. Please try again later.';
-  }
-
   const getRecipient = (conv: ConversationDisplay) => {
-    return conv.user; // Always return the user who started the conversation
+    // For an admin, the recipient is always the user who started the conversation
+    return conv.user;
+  };
+
+  const formatTime = (date: Date) => {
+    if (isToday(date)) {
+      return format(date, 'h:mm');
+    } else if (isYesterday(date)) {
+      return 'Yesterday';
+    } else if (isThisWeek(date)) {
+      return format(date, 'EEE');
+    } else {
+      return format(date, 'MMM d');
+    }
   };
 
   return (
@@ -168,32 +142,25 @@ export default async function ChatIndexPage() {
             <div className='flex flex-col gap-1 p-2'>
               {conversations.map((conv) => {
                 const recipient = getRecipient(conv);
-                const lastMessage = conv.messages[0];
-                const isAssignedToMe = conv.assignedToId === currentUserId;
-                const isUnassigned = !conv.assignedToId;
-                const hasUnread =
-                  lastMessage && lastMessage.senderId !== currentUserId;
+                const lastMessage = conv.messages?.[0]; // Safely access lastMessage
+                const isUnread = conv._count.messages.isRead > 0; // Use count for unread
 
                 return (
                   <Link key={conv.id} href={`/support/agent/${conv.id}`}>
                     <div className='hover:bg-muted/50 rounded-lg p-3 transition-colors'>
                       <div className='flex items-start space-x-3'>
-                        <div className='relative'>
-                          <Avatar className='border-background h-12 w-12 border-2 shadow-sm'>
+                        <div className='relative shrink-0'>
+                          <Avatar className='border-background h-10 w-10 border-2 shadow-sm'>
                             <AvatarImage
                               src={recipient.image || undefined}
                               alt={recipient.name || 'User'}
                             />
-                            <AvatarFallback className='bg-linear-to-br from-blue-500 to-purple-600 font-semibold text-white'>
+                            <AvatarFallback>
                               {getInitials(recipient.name || 'U')}
                             </AvatarFallback>
                           </Avatar>
-                          {/* Assignment indicator */}
-                          {isAssignedToMe && (
-                            <div className='absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background' />
-                          )}
-                          {isUnassigned && (
-                            <div className='absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 border-2 border-background' />
+                          {getUserById(recipient.id)?.status === 'online' && (
+                            <div className='absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background' />
                           )}
                         </div>
 
@@ -214,8 +181,8 @@ export default async function ChatIndexPage() {
                               <span className='text-muted-foreground text-xs'>
                                 {formatTime(conv.lastMessageAt)}
                               </span>
-                              {hasUnread && (
-                                <div className='h-2 w-2 rounded-full bg-blue-500' />
+                              {isUnread && (
+                                <Badge className='h-2 w-2 rounded-full bg-blue-500 p-0' />
                               )}
                             </div>
                           </div>
@@ -236,11 +203,6 @@ export default async function ChatIndexPage() {
                             {conv.assignedTo && (
                               <span className='text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground ml-2 shrink-0'>
                                 {conv.assignedTo.name}
-                              </span>
-                            )}
-                            {isUnassigned && (
-                              <span className='text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 px-2 py-0.5 rounded-full ml-2 shrink-0'>
-                                Unassigned
                               </span>
                             )}
                           </div>
