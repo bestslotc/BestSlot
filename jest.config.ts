@@ -29,6 +29,7 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+  transformIgnorePatterns: ['/node_modules/(?!better-auth)'],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { sendUserNotification } from '@/lib/ably';
 import { auth } from '@/lib/auth';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -146,48 +147,55 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create notifications in a transaction
-      await prisma.$transaction([
-        // Create notification for user
-        prisma.notification.create({
-          data: {
-            userId,
-            type: 'SYSTEM',
-            title: 'Deposit Request Submitted',
-            message: `Your deposit request of ${amount} BDT via ${paymentMethod} has been submitted and is pending approval.`,
-            isRead: false,
-            data: {
-              depositRequestId: depositRequest.id,
-              amount: amount,
-              paymentMethod: paymentMethod,
-            },
+      // Create notification data
+      const userNotificationData = {
+        userId,
+        type: 'SYSTEM' as const,
+        title: 'Deposit Request Submitted',
+        message: `Your deposit request of ${amount} BDT via ${paymentMethod} has been submitted and is pending approval.`,
+        isRead: false,
+        data: {
+          depositRequestId: depositRequest.id,
+          amount: amount,
+          paymentMethod: paymentMethod,
+        },
+      };
+
+      const adminNotificationsData = adminUsers.map((admin) => ({
+        userId: admin.id,
+        type: 'SYSTEM' as const,
+        title: 'New Deposit Request',
+        message: `${user.name || user.email} has submitted a deposit request of ${amount} BDT via ${paymentMethod}.`,
+        isRead: false,
+        data: {
+          depositRequestId: depositRequest.id,
+          amount: amount,
+          paymentMethod: paymentMethod,
+          senderNumber: senderNumber,
+          paymentTransactionId: paymentTransactionId,
+          requestedBy: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
           },
-        }),
-        // Create notifications for all admins
-        ...adminUsers.map((admin) =>
-          prisma.notification.create({
-            data: {
-              userId: admin.id,
-              type: 'SYSTEM',
-              title: 'New Deposit Request',
-              message: `${user.name || user.email} has submitted a deposit request of ${amount} BDT via ${paymentMethod}.`,
-              isRead: false,
-              data: {
-                depositRequestId: depositRequest.id,
-                amount: amount,
-                paymentMethod: paymentMethod,
-                senderNumber: senderNumber,
-                paymentTransactionId: paymentTransactionId,
-                requestedBy: {
-                  id: user.id,
-                  name: user.name,
-                  email: user.email,
-                },
-              },
-            },
-          }),
-        ),
-      ]);
+        },
+      }));
+
+      // Create notifications in a transaction
+      const [userNotification, ...adminNotifications] =
+        await prisma.$transaction([
+          prisma.notification.create({ data: userNotificationData }),
+          ...adminNotificationsData.map((data) =>
+            prisma.notification.create({ data }),
+          ),
+        ]);
+
+      // Publish real-time notifications
+      await sendUserNotification(userNotification.userId, userNotification);
+
+      for (const adminNotification of adminNotifications) {
+        await sendUserNotification(adminNotification.userId, adminNotification);
+      }
 
       return NextResponse.json(
         {

@@ -141,7 +141,7 @@ const NOTIFICATION_CONFIG: Record<
 
 function NotificationsContent() {
   const router = useRouter();
-  const { isPending: isSessionPending, data: session } = useSession();
+  const { isPending: _isSessionPending, data: session } = useSession();
   const { isPending, data: notifications, isError } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -195,7 +195,7 @@ function NotificationsContent() {
     }
   };
 
-  useNotificationListener(session?.user.id);
+  useNotificationListener(session?.user.id, soundEnabled);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>

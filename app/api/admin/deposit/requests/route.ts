@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { sendUserNotification } from '@/lib/ably';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -308,7 +309,7 @@ export async function POST(request: NextRequest) {
         });
 
         // 4. Create notification for user
-        await tx.notification.create({
+        const notification = await tx.notification.create({
           data: {
             userId: depositRequest.userId,
             type: 'DEPOSIT_SUCCESS',
@@ -324,8 +325,14 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return { updatedRequest, transaction, updatedWallet };
+        return { updatedRequest, transaction, updatedWallet, notification };
       });
+
+      // Publish real-time notification
+      await sendUserNotification(
+        result.notification.userId,
+        result.notification,
+      );
 
       return NextResponse.json({
         success: true,
@@ -361,7 +368,7 @@ export async function POST(request: NextRequest) {
         });
 
         // 2. Create notification for user
-        await tx.notification.create({
+        const notification = await tx.notification.create({
           data: {
             userId: depositRequest.userId,
             type: 'DEPOSIT_REJECTED',
@@ -376,8 +383,14 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return { updatedRequest };
+        return { updatedRequest, notification };
       });
+
+      // Publish real-time notification
+      await sendUserNotification(
+        result.notification.userId,
+        result.notification,
+      );
 
       return NextResponse.json({
         success: true,
