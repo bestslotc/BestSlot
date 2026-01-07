@@ -9,10 +9,10 @@ export interface PresenceUser {
   username?: string;
   image?: string;
   status: 'online' | 'away' | 'busy';
-  lastSeen: number; // timestamp
+  lastSeen: number;
   clientId: string;
   connectionId: string;
-  data?: unknown; // additional presence data
+  data?: unknown;
 }
 
 interface PresenceState {
@@ -37,23 +37,29 @@ interface PresenceState {
   setConnectionState: (connected: boolean, error?: string) => void;
   setCurrentUserStatus: (status: 'online' | 'away' | 'busy') => void;
 
-  // Ably presence handlers
+  // Handlers
   handlePresenceEnter: (member: Ably.PresenceMessage) => void;
   handlePresenceLeave: (member: Ably.PresenceMessage) => void;
   handlePresenceUpdate: (member: Ably.PresenceMessage) => void;
   syncPresenceMembers: (members: Ably.PresenceMessage[]) => void;
 
-  // Presence methods
+  // Core Methods
   initializePresence: (session: Session | null) => Promise<void>;
   updateStatus: (status: 'online' | 'away' | 'busy') => Promise<void>;
   enterPresence: (userData: unknown) => Promise<void>;
   leavePresence: () => Promise<void>;
   cleanup: () => Promise<void>;
+
+  // NEW: Notification Subscription
+  subscribeToNotifications: (
+    userId: string,
+    // biome-ignore lint/suspicious/noExplicitAny: this is fine
+    callback: (notification: any) => void,
+  ) => () => void; // Returns an unsubscribe function
 }
 
 export const usePresenceStore = create<PresenceState>()(
   subscribeWithSelector((set, get) => ({
-    // Initial state
     onlineUsers: new Map(),
     currentUserStatus: 'online',
     isConnected: false,
@@ -61,7 +67,6 @@ export const usePresenceStore = create<PresenceState>()(
     ably: null,
     presenceChannel: null,
 
-    // Computed getters
     getOnlineUsers: () => Array.from(get().onlineUsers.values()),
     getOnlineUserCount: () => get().onlineUsers.size,
     getUserById: (id: string) => get().onlineUsers.get(id),
@@ -70,18 +75,11 @@ export const usePresenceStore = create<PresenceState>()(
         (user) => user.status === status,
       ),
 
-    // Actions
     setConnection: (ably, channel) => set({ ably, presenceChannel: channel }),
-
     setConnectionState: (connected, error) =>
-      set({
-        isConnected: connected,
-        connectionError: error || null,
-      }),
-
+      set({ isConnected: connected, connectionError: error || null }),
     setCurrentUserStatus: (status) => set({ currentUserStatus: status }),
 
-    // Ably presence event handlers
     handlePresenceEnter: (member) => {
       const userData = member.data;
       const user: PresenceUser = {
@@ -95,7 +93,6 @@ export const usePresenceStore = create<PresenceState>()(
         connectionId: member.connectionId,
         data: userData,
       };
-
       set((state) => {
         const newUsers = new Map(state.onlineUsers);
         newUsers.set(user.id, user);
@@ -105,7 +102,6 @@ export const usePresenceStore = create<PresenceState>()(
 
     handlePresenceLeave: (member) => {
       const userId = member.data?.id || member.clientId;
-
       set((state) => {
         const newUsers = new Map(state.onlineUsers);
         newUsers.delete(userId);
@@ -116,11 +112,9 @@ export const usePresenceStore = create<PresenceState>()(
     handlePresenceUpdate: (member) => {
       const userData = member.data;
       const userId = userData.id;
-
       set((state) => {
         const newUsers = new Map(state.onlineUsers);
         const existingUser = newUsers.get(userId);
-
         if (existingUser) {
           newUsers.set(userId, {
             ...existingUser,
@@ -129,14 +123,12 @@ export const usePresenceStore = create<PresenceState>()(
             data: userData,
           });
         }
-
         return { onlineUsers: newUsers };
       });
     },
 
     syncPresenceMembers: (members) => {
       const newUsers = new Map<string, PresenceUser>();
-
       members.forEach((member) => {
         const userData = member.data;
         const user: PresenceUser = {
@@ -152,172 +144,111 @@ export const usePresenceStore = create<PresenceState>()(
         };
         newUsers.set(user.id, user);
       });
-
       set({ onlineUsers: newUsers });
     },
 
-    // Initialize presence connection
     initializePresence: async (session) => {
-      if (!session?.user?.id) {
-        return;
-      }
-
-      const currentState = get();
-
-      // Cleanup existing connection
-      if (currentState.ably) {
-        await get().cleanup();
-      }
+      if (!session?.user?.id) return;
+      if (get().ably) await get().cleanup();
 
       try {
         set({ connectionError: null });
-
         const { Realtime } = await import('ably');
-
         const ably = new Realtime({
           authUrl: '/api/chat/ably/auth',
           autoConnect: true,
           clientId: session.user.id,
-          disconnectedRetryTimeout: 15000,
-          suspendedRetryTimeout: 30000,
           closeOnUnload: true,
         });
 
         set({ ably });
 
-        // Connection state management
         ably.connection.on('connected', async () => {
-          const channel = ably.channels.get('presence:global', {
-            params: { rewind: '1' }, // Get recent presence history
-          });
-
+          const channel = ably.channels.get('presence:global');
           set({ presenceChannel: channel });
 
-          // Set up presence event listeners BEFORE entering
-          const state = get();
-          channel.presence.subscribe('enter', state.handlePresenceEnter);
-          channel.presence.subscribe('leave', state.handlePresenceLeave);
-          channel.presence.subscribe('update', state.handlePresenceUpdate);
+          channel.presence.subscribe('enter', get().handlePresenceEnter);
+          channel.presence.subscribe('leave', get().handlePresenceLeave);
+          channel.presence.subscribe('update', get().handlePresenceUpdate);
 
-          // Enter presence with full user data
           await get().enterPresence({
             id: session.user.id,
             name: session.user.name,
-            email: session.user.email,
             image: session.user.image,
             status: 'online',
             timestamp: Date.now(),
           });
 
-          // Get current presence members and sync
-          try {
-            const presenceSet = await channel.presence.get();
-            get().syncPresenceMembers(presenceSet);
-          } catch (error) {
-            console.error('Failed to get presence members:', error);
-          }
-
+          const presenceSet = await channel.presence.get();
+          get().syncPresenceMembers(presenceSet);
           get().setConnectionState(true);
         });
 
-        ably.connection.on('disconnected', () => {
-          get().setConnectionState(false);
-        });
-
-        ably.connection.on('suspended', () => {
-          get().setConnectionState(false);
-        });
-        ably.connection.on('failed', (_error) => {
-          get().setConnectionState(false, 'Ably connection failed');
-        });
-
-        ably.connection.on('closed', () => {
-          get().setConnectionState(false);
-        });
-      } catch (error: unknown) {
-        get().setConnectionState(false, (error as Error).message);
+        ably.connection.on('disconnected', () =>
+          get().setConnectionState(false),
+        );
+        // biome-ignore lint/suspicious/noExplicitAny: this is fine
+        ably.connection.on('failed', (err: any) =>
+          get().setConnectionState(false, err.message),
+        );
+        // biome-ignore lint/suspicious/noExplicitAny: this is fine
+      } catch (error: any) {
+        set({ connectionError: error.message });
       }
     },
 
-    // Enter presence with user data
+    subscribeToNotifications: (userId, callback) => {
+      const { ably } = get();
+      if (!ably) return () => {};
+
+      const channel = ably.channels.get(`notifications:${userId}`);
+
+      // biome-ignore lint/suspicious/noExplicitAny: this is fine
+      const listener = (message: any) => {
+        callback(message.data);
+      };
+
+      channel.subscribe('new-notification', listener);
+
+      // Return the unsubscribe function
+      return () => {
+        channel.unsubscribe('new-notification', listener);
+      };
+    },
+
     enterPresence: async (userData) => {
       const { presenceChannel } = get();
-      if (!presenceChannel) return;
-
-      try {
-        await presenceChannel.presence.enter(userData);
-      } catch (error) {
-        console.error('Failed to enter presence:', error);
-        throw error;
-      }
+      if (presenceChannel) await presenceChannel.presence.enter(userData);
     },
 
-    // Update status (this is the main method for status changes)
     updateStatus: async (status) => {
       const { presenceChannel, ably } = get();
-      if (!presenceChannel || !(ably?.connection?.state === 'connected')) {
-        return;
-      }
-
-      try {
-        // Update presence data with new status
-        await presenceChannel.presence.update({
-          id: ably.auth.clientId,
-          status,
-          timestamp: Date.now(),
-        });
-
-        get().setCurrentUserStatus(status);
-      } catch (error) {
-        console.error('Failed to update status:', error);
-        throw error;
-      }
+      if (!presenceChannel || ably?.connection?.state !== 'connected') return;
+      await presenceChannel.presence.update({
+        id: ably.auth.clientId,
+        status,
+        timestamp: Date.now(),
+      });
+      get().setCurrentUserStatus(status);
     },
 
-    // Leave presence
     leavePresence: async () => {
       const { presenceChannel } = get();
-      if (!presenceChannel) return;
-
-      try {
-        await presenceChannel.presence.leave();
-      } catch (error) {
-        console.error('Failed to leave presence:', error);
-      }
+      if (presenceChannel) await presenceChannel.presence.leave();
     },
 
-    // Cleanup everything
     cleanup: async () => {
       const { ably, presenceChannel } = get();
-
-      // Leave presence gracefully
       if (presenceChannel) {
-        try {
-          await presenceChannel.presence.leave();
-
-          // Unsubscribe from events
-          presenceChannel.presence.unsubscribe();
-        } catch (error) {
-          console.error('Error during presence cleanup:', error);
-        }
+        presenceChannel.presence.unsubscribe();
+        await presenceChannel.presence.leave();
       }
-
-      // Close Ably connection
-      if (ably) {
-        try {
-          ably.close();
-        } catch (error) {
-          console.error('Error closing Ably:', error);
-        }
-      }
-
-      // Reset state
+      if (ably) ably.close();
       set({
         ably: null,
         presenceChannel: null,
         isConnected: false,
         onlineUsers: new Map(),
-        connectionError: null,
       });
     },
   })),

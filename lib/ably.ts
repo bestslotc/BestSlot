@@ -1,6 +1,7 @@
 import Ably from 'ably';
 import type { ConversationDisplay } from '@/hooks/use-conversations';
 import { prisma } from '@/lib/prisma';
+import type { Notification } from './generated/prisma/client';
 
 if (!process.env.ABLY_API_KEY) {
   throw new Error('ABLY_API_KEY environment variable not set');
@@ -59,4 +60,15 @@ export async function publishConversationUpdate(conversationId: string) {
       await agentChannel.publish('new-conversation-update', payload);
     }
   }
+}
+export async function sendUserNotification(
+  userId: string,
+  notification: Notification,
+) {
+  const channel = ably.channels.get(`notifications:${userId}`);
+
+  // Spread the notification as-is.
+  // Ably's SDK will automatically handle the serialization
+  // of the Prisma createdAt date into an ISO string.
+  await channel.publish('new-notification', notification);
 }

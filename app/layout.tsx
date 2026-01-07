@@ -5,7 +5,7 @@ import './globals.css';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
-import { PresenceProvider } from '@/context/presence-provider';
+import { PresenceProvider } from '@/context/ably-provider';
 import TanstackProvider from '@/context/tanstack-provider';
 
 const geistSans = Geist({

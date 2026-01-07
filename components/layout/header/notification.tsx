@@ -29,6 +29,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNotificationListener } from '@/hooks/use-notification';
 import { useSession } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 import {
@@ -140,6 +141,7 @@ const NOTIFICATION_CONFIG: Record<
 
 function NotificationsContent() {
   const router = useRouter();
+  const { isPending: isSessionPending, data: session } = useSession();
   const { isPending, data: notifications, isError } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -192,6 +194,8 @@ function NotificationsContent() {
       return 'Recently';
     }
   };
+
+  useNotificationListener(session?.user.id);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
